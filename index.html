@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inkly – Text zu Goodnotes-Handschrift</title>
+  <link rel="icon" href="assets/logo-icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600&family=Caveat:wght@400;600&family=Kalam:wght@400;700&family=Patrick+Hand&family=Indie+Flower&family=Shadows+Into+Light&family=Gochi+Hand&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=4">
+</head>
+<body>
+  <div class="announcement-bar" id="announce">
+    <span>Neu: Dein Text als echte Goodnotes-Tinte – radierbar und umfärbbar.</span>
+    <a class="text-link" href="#faq">Mehr erfahren ›</a>
+    <button class="announce-close" aria-label="Schließen" onclick="this.parentElement.remove()">×</button>
+  </div>
+
+  <header class="nav-bar">
+    <div class="container nav-inner">
+      <a class="logo" href="#"><img src="assets/logo-icon.svg" alt="" width="28" height="28">Inkly</a>
+      <nav class="nav-links">
+        <a href="#editor">Editor</a>
+        <a href="#so-gehts">So geht's</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <a class="button-store-pill" href="#editor">Loslegen</a>
+    </div>
+  </header>
+
+  <section class="hero">
+    <p class="tile-eyebrow">Text → Handschrift → .goodnotes</p>
+    <h1 class="display-xl">Text rein. Goodnotes raus.</h1>
+    <p class="hero-sub">Schreib oder füge deinen Text ein, sieh sofort die handschriftliche Vorschau und exportiere sie als Notizbuch, das du direkt in Goodnotes öffnest.</p>
+  </section>
+
+  <main id="editor" class="container store-split">
+    <!-- Linke Seite: Vorschau -->
+    <section class="gallery">
+      <div class="gallery-head">
+        <div class="media-toggles">
+          <span class="media-toggle active">Vorschau</span>
+          <span class="media-toggle" id="pageCount">1 Seite</span>
+        </div>
+        <span class="caption-muted">A4 · 200 dpi</span>
+      </div>
+      <div class="preview-stage" id="preview"></div>
+    </section>
+
+    <!-- Rechte Seite: Einstellungen -->
+    <aside class="purchase-col">
+      <p class="tier-eyebrow">Schritt 1</p>
+      <h2 class="subhead">Dein Text</h2>
+      <textarea id="textInput" class="text-input" rows="10" spellcheck="true"># Lernzettel Biologie
+
+Die Zelle ist die kleinste Einheit des Lebens.
+- Zellkern: enthält die DNA
+- Mitochondrien: Kraftwerke der Zelle
+- Ribosomen: bauen Proteine
+
+Tipp: Zeilen mit # werden zu Überschriften, Zeilen mit - zu Aufzählungen.</textarea>
+
+      <p class="tier-eyebrow">Schritt 2</p>
+      <h2 class="subhead">Stil</h2>
+
+      <div class="field-label">Ausgabe</div>
+      <div class="option-grid two" data-group="mode">
+        <button class="option-card selectable mode-card active" data-value="ink">
+          <span class="option-badge">Neu</span>
+          <span class="option-title sm">Echte Tinte</span>
+          <span class="ui-text muted">Radieren, auswählen, umfärben – wie selbst geschrieben.</span>
+        </button>
+        <button class="option-card selectable mode-card" data-value="pdf">
+          <span class="option-title sm">PDF-Seite</span>
+          <span class="ui-text muted">Text ist Teil des Seitenhintergrunds.</span>
+        </button>
+      </div>
+
+      <div class="field-label">Handschrift</div>
+      <div class="option-grid three" data-group="font">
+        <button class="option-card selectable active" data-value="Caveat"><span class="font-sample" style="font-family:Caveat">Caveat</span></button>
+        <button class="option-card selectable" data-value="Kalam"><span class="font-sample" style="font-family:Kalam">Kalam</span></button>
+        <button class="option-card selectable" data-value="Patrick Hand"><span class="font-sample" style="font-family:'Patrick Hand'">Patrick</span></button>
+        <button class="option-card selectable" data-value="Indie Flower"><span class="font-sample" style="font-family:'Indie Flower'">Indie</span></button>
+        <button class="option-card selectable" data-value="Shadows Into Light"><span class="font-sample" style="font-family:'Shadows Into Light'">Shadows</span></button>
+        <button class="option-card selectable" data-value="Gochi Hand"><span class="font-sample" style="font-family:'Gochi Hand'">Gochi</span></button>
+      </div>
+
+      <div class="field-label">Papier</div>
+      <div class="option-grid" data-group="paper">
+        <button class="option-card selectable active" data-value="lined"><span class="paper-swatch lined"></span><span class="option-title sm">Liniert</span></button>
+        <button class="option-card selectable" data-value="lined-small"><span class="paper-swatch lined-small"></span><span class="option-title sm">Eng liniert</span></button>
+        <button class="option-card selectable" data-value="grid"><span class="paper-swatch grid"></span><span class="option-title sm">Kariert</span></button>
+        <button class="option-card selectable" data-value="blank"><span class="paper-swatch"></span><span class="option-title sm">Blanko</span></button>
+      </div>
+
+      <div class="field-label">Tinte</div>
+      <div class="ink-row" data-group="ink">
+        <button class="ink active" data-value="#1d3f9e" style="--ink:#1d3f9e" aria-label="Blau"></button>
+        <button class="ink" data-value="#262626" style="--ink:#262626" aria-label="Schwarz"></button>
+        <button class="ink" data-value="#0f6b4f" style="--ink:#0f6b4f" aria-label="Grün"></button>
+        <button class="ink" data-value="#9b1c31" style="--ink:#9b1c31" aria-label="Rot"></button>
+      </div>
+
+      <div class="field-label">Schriftgröße <span id="sizeVal" class="caption-muted">1.0×</span></div>
+      <input type="range" id="sizeInput" min="0.7" max="1.6" step="0.05" value="1">
+
+      <div data-mode-only="ink">
+        <div class="field-label">Strichstärke <span id="widthVal" class="caption-muted">wie die Schrift</span></div>
+        <input type="range" id="widthInput" min="0.6" max="1.6" step="0.05" value="1">
+      </div>
+
+      <div class="field-label">Unregelmäßigkeit <span id="jitterVal" class="caption-muted">mittel</span></div>
+      <input type="range" id="jitterInput" min="0" max="2" step="0.1" value="1">
+
+      <div class="benefits-panel">
+        <div>✓ Keine Vorlage nötig – echte Goodnotes-Notizbücher sind eingebaut.</div>
+        <div>✓ Alles passiert lokal im Browser – nichts wird hochgeladen.</div>
+        <div data-mode-only="ink">✓ Echte Goodnotes-Tinte: jeder Buchstabe lässt sich radieren, verschieben und umfärben.</div>
+        <div data-mode-only="pdf" hidden>✓ Du kannst in Goodnotes ganz normal auf die Seiten schreiben.</div>
+      </div>
+
+      <details class="custom-template" id="customTemplate">
+        <summary>Eigene Vorlage verwenden (optional)</summary>
+        <label class="option-card dropzone" id="dropzone">
+          <input type="file" id="templateInput" accept=".goodnotes,application/zip" hidden>
+          <span class="option-badge" id="templateBadge" hidden>Gespeichert</span>
+          <span class="option-title" id="templateTitle">Eigene Vorlage auswählen</span>
+          <span class="ui-text" id="templateInfo"></span>
+        </label>
+        <div class="template-actions" id="templateActions" hidden>
+          <button class="text-link-btn" id="forgetTemplate">Eigene Vorlage entfernen</button>
+        </div>
+      </details>
+    </aside>
+  </main>
+
+  <div class="purchase-bar">
+    <div class="container purchase-inner">
+      <div class="purchase-left">
+        <input id="fileName" class="name-input" value="Lernzettel" aria-label="Dateiname">
+        <span class="ui-text muted" id="statusText">Vorlage: Liniert</span>
+      </div>
+      <div class="purchase-right">
+        <button class="button-store-cart" id="exportPdf">Als PDF</button>
+        <button class="button-store-buy" id="exportGn">.goodnotes exportieren</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="feature-link-band" id="so-gehts">
+    <div class="container">
+      <h2 class="display center">So geht's</h2>
+      <div class="feature-cols">
+        <div class="feature">
+          <div class="feature-num">1</div>
+          <h3 class="feature-title">Text schreiben</h3>
+          <p class="ui-text muted">Text einfügen oder tippen. Mit # werden Zeilen zu Überschriften, mit - zu Aufzählungen.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-num">2</div>
+          <h3 class="feature-title">Stil wählen</h3>
+          <p class="ui-text muted">Handschrift, Papier (liniert, eng liniert, kariert, blanko) und Tinte wählen. Die Vorschau aktualisiert sich live.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-num">3</div>
+          <h3 class="feature-title">In Goodnotes öffnen</h3>
+          <p class="ui-text muted">Die exportierte .goodnotes-Datei auf iPad oder Mac öffnen – fertig ist dein Notizbuch.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container faq" id="faq">
+    <h2 class="display center">Häufige Fragen</h2>
+    <details class="faq-row">
+      <summary>Wie entsteht die .goodnotes-Datei?</summary>
+      <p>Eine .goodnotes-Datei ist ein ZIP-Archiv mit proprietären Metadaten (Dokument-ID, Indizes). Eine frei erzeugte Datei meldet in Goodnotes „Missing document ID“. Deshalb sind echte, leere Goodnotes-Notizbücher eingebaut: Sie dienen als Hülle, ersetzt werden nur die eingebettete Seite und das Vorschaubild. Die internen IDs werden bei jedem Export neu vergeben, damit jede Datei ein eigenes Notizbuch ist.</p>
+    </details>
+    <details class="faq-row">
+      <summary>Ist der Text als echte Goodnotes-Tinte bearbeitbar?</summary>
+      <p>Ja, mit der Ausgabe „Echte Tinte“: Jeder Buchstabe wird als Goodnotes-Stiftstrich gespeichert und lässt sich radieren, mit dem Lasso auswählen, verschieben und umfärben. Dafür wird jedes Zeichen der gewählten Handschrift auf seine Mittellinie ausgedünnt und als Strich in passender Dicke nachgezeichnet. Bei „PDF-Seite“ ist der Text dagegen Teil des Seitenhintergrunds.</p>
+    </details>
+    <details class="faq-row">
+      <summary>Was passiert bei mehr als einer Seite?</summary>
+      <p>Die Vorlage beschreibt nur eine Seite. Bei längeren Texten kannst du wählen, ob für jede Seite eine eigene .goodnotes-Datei erzeugt wird. Alternativ: „Als PDF“ exportieren und in Goodnotes importieren – dann bleiben alle Seiten in einem Dokument.</p>
+    </details>
+    <details class="faq-row">
+      <summary>Kann ich eine eigene Vorlage verwenden?</summary>
+      <p>Ja, unter „Eigene Vorlage verwenden“ – etwa für ein anderes Seitenformat. Nutze ein leeres, einseitiges Notizbuch: Bestehende Stiftstriche aus der Vorlage bleiben erhalten und lägen sonst über deinem Text.</p>
+    </details>
+    <details class="faq-row">
+      <summary>Was, wenn Goodnotes die Datei nicht öffnet?</summary>
+      <p>Das Ersetzen der PDF-Anlage ist ein experimenteller Workaround, keine offizielle Schnittstelle. Prüfe, ob die Vorlage einseitig und leer war, und nutze sonst den PDF-Export.</p>
+    </details>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-top">
+        <span class="logo light"><img src="assets/logo-icon.svg" alt="" width="28" height="28">Inkly</span>
+        <a class="button-download-app" href="#editor">Zum Editor</a>
+      </div>
+      <div class="footer-cols">
+        <div><h4>Werkzeug</h4><a href="#editor">Editor</a><a href="#so-gehts">So geht's</a></div>
+        <div><h4>Hilfe</h4><a href="#faq">FAQ</a></div>
+        <div><h4>Hinweis</h4><span>Nicht mit Goodnotes verbunden. Inoffizielles, experimentelles Werkzeug.</span></div>
+      </div>
+      <div class="footer-legal">© 2026 Inkly</div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="templates.js?v=4"></script>
+  <script src="app.js?v=5"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Lokale Claude-/Editor-Einstellungen
+.claude/
+.idea/workspace.xml
+
+# Python
+__pycache__/
+*.pyc
+
+# Testexporte
+*.goodnotes
