@@ -24,6 +24,7 @@
   <img src="https://img.shields.io/badge/tinte-radierbar-4fc3f7?style=for-the-badge&labelColor=555" alt="Radierbare Tinte">
   <img src="https://img.shields.io/badge/100%25-im%20browser-4fc3f7?style=for-the-badge&labelColor=555" alt="100% im Browser">
   <img src="https://img.shields.io/badge/stack-HTML%20%C2%B7%20CSS%20%C2%B7%20JS-4fc3f7?style=for-the-badge&labelColor=555" alt="HTML CSS JS">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-4fc3f7?style=for-the-badge&labelColor=555" alt="MIT License"></a>
 </p>
 
 ---
@@ -119,5 +120,11 @@ Die Python-Werkzeuge zum Untersuchen und Erzeugen von Strichen liegen in [`tools
 - Handschriften von [Google Fonts](https://fonts.google.com/) (SIL Open Font License)
 - [JSZip](https://stuk.github.io/jszip/) zum Lesen und Schreiben der Archive
 - [jsPDF](https://github.com/parallax/jsPDF) für den PDF-Export
+
+---
+
+## 📄 Lizenz
+
+Der Code von Inkly steht unter der [MIT-Lizenz](LICENSE). Die Handschriften werden von Google Fonts geladen und stehen unter der SIL Open Font License; JSZip und jsPDF haben ihre eigenen Lizenzen.
 
 <p align="center"><sub>Mit ✍️ und viel Reverse Engineering gebaut.</sub></p>
