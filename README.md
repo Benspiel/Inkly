@@ -81,7 +81,7 @@ Goodnotes hat kein offizielles Dateiformat zum Importieren von Handschrift. Inkl
 
 <br>
 
-- Eine `.goodnotes`-Datei ist ein **ZIP-Archiv** mit Protobuf-Indexdateien (`index.*.pb`), einer PDF-Anlage für das Papier und einer Strichdatei pro Seite (`notes/<ID>`).
+- Ein `.goodnotes`-Datei ist ein **ZIP-Archiv** mit Protobuf-Indexdateien (`index.*.pb`), einer PDF-Anlage für das Papier und einer Strichdatei pro Seite (`notes/<ID>`).
 - Frei erfundene Archive lehnt Goodnotes ab („Missing document ID“). Inkly nutzt deshalb **leere, echte Goodnotes-Notizbücher als Hülle** (`templates.js`) und vergibt bei jedem Export **neue IDs** – so ist jede Datei ein eigenes Notizbuch.
 - `notes/<ID>` ist eine Folge längenpräfixierter **Protobuf-Datensätze** – pro Strich ein Kopf (ID, Lamport-Uhr, Autor) und ein Inhalt (Farbe als RGBA, Punktdaten).
 - Die Punktdaten liegen **LZ4-komprimiert im Apple-Rahmen** (`bv41 … bv4$`) in einem `tpl`-Block mit dem Schema `vuA(v)A(S(uu))A(S(uuuu))vA(f)`: Version, Breite, Segmenttypen, Startpunkt, quadratische Segmente.
