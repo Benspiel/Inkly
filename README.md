@@ -41,6 +41,7 @@
 | 🎨 **Tintenfarben** | Blau, Schwarz, Grün oder Rot. |
 | 📝 **Mini-Markdown** | `# Überschrift` wird unterstrichen, `- Punkt` wird zur Aufzählung – perfekt für Lernzettel. |
 | 📄 **PDF-Export** | Alternativ als PDF oder als `.goodnotes` mit dem Text als Seitenhintergrund. |
+| 📱 **Als App** | Auf iPad, iPhone, Android oder am Computer zum Home-Bildschirm hinzufügen – startet ohne Browserleiste und funktioniert auch offline. |
 | 🔒 **Privat** | Alles läuft lokal im Browser. Ein Konto brauchst du nur für „Meine Handschrift“ – dann wird ausschließlich deine gezeichnete Handschrift im Profil gespeichert, nie dein Text. Schriften und Bibliotheken liegen lokal – kein Abruf von Google Fonts oder CDNs. |
 
 ---
