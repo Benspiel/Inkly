@@ -241,6 +241,9 @@ input[type=range] { width: 100%; accent-color: var(--store-blue); }
 .form-error { margin: 0; color: var(--error); font-size: 14px; }
 .wide { width: 100%; }
 .center-text { text-align: center; }
+.verify-icon { font-size: 40px; text-align: center; color: var(--store-blue); line-height: 1; }
+.verify-badge { font-size: 12px; padding: 1px 8px; border-radius: 9999px; background: var(--fog); color: var(--ink-secondary); white-space: nowrap; }
+.verify-badge.ok { background: var(--store-blue-tint); color: var(--store-blue); }
 .profile-name { margin: 0; font-size: 18px; font-weight: 600; }
 .hand-current { display: flex; align-items: baseline; justify-content: space-between; }
 .hand-char { font: 600 32px/1 "Open Sans", sans-serif; color: var(--store-blue); min-width: 40px; }

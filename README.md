@@ -64,14 +64,14 @@ Dann <http://localhost:5173> öffnen, Text einfügen, Stil wählen und auf **„
 Anmeldung und Profil laufen über [Appwrite](https://appwrite.io). Ohne Einrichtung ist die Anmeldung einfach deaktiviert, alles andere funktioniert weiter.
 
 1. In der Appwrite-Konsole ein Projekt anlegen und unter **Overview → Platforms** eine **Web-Plattform** mit deiner Domain hinzufügen (für lokal: `localhost`).
-2. Unter **Auth → Settings** die Anmeldung per **E-Mail/Passwort** aktivieren.
+2. Unter **Auth → Settings** die Anmeldung per **E-Mail/Passwort** aktivieren. Neue Konten bekommen automatisch eine **Bestätigungs-Mail**; der Link darin führt zurück zu Inkly und schaltet das Konto frei. Bei Appwrite Cloud werden die Mails ohne weitere Einrichtung verschickt, selbst gehostet muss unter **Messaging/SMTP** ein Mailserver eingetragen sein. Den Mailtext kannst du unter **Auth → Templates → Verification** anpassen.
 3. Unter **Databases** eine Datenbank mit der ID `inkly` anlegen, darin eine Tabelle mit der ID `handwriting`:
    - Spalte `glyphs`: **String**, Größe `1000000`, nicht erforderlich
    - **Row security** einschalten
-   - Tabellen-Berechtigung: Rolle **Users** → nur **Create**
+   - Tabellen-Berechtigung: Rolle **Users** mit Status **verified** → nur **Create** (unbestätigte Konten können so nichts speichern)
 4. In `config.js` die `endpoint`- und `projectId`-Werte aus der Konsole eintragen.
 
-Jede Handschrift liegt in einer eigenen Zeile mit der Benutzer-ID als Schlüssel. Nur der Benutzer selbst darf sie lesen, ändern und löschen.
+Jede Handschrift liegt in einer eigenen Zeile mit der Benutzer-ID als Schlüssel. Nur der Benutzer selbst darf sie lesen, ändern und löschen – und das erst, nachdem er seine E-Mail-Adresse bestätigt hat.
 
 ---
 

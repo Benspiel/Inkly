@@ -133,6 +133,12 @@
     handStrip: $("handStrip"),
     handSave: $("handSave"),
     handSaveInfo: $("handSaveInfo"),
+    verifyDialog: $("verifyDialog"),
+    verifyEmail: $("verifyEmail"),
+    verifyError: $("verifyError"),
+    verifyCheck: $("verifyCheck"),
+    verifyResend: $("verifyResend"),
+    profileVerified: $("profileVerified"),
   };
 
   /* ---------- Hilfsfunktionen ---------- */
@@ -1139,6 +1145,7 @@
     if (type === "user_already_exists" || code === 409) return "Zu dieser E-Mail gibt es schon ein Konto. Bitte melde dich an.";
     if (type === "user_invalid_credentials" || code === 401) return "E-Mail oder Passwort ist falsch.";
     if (type === "general_rate_limit_exceeded" || code === 429) return "Zu viele Versuche. Bitte warte kurz.";
+    if (type === "user_unauthorized" || code === 403) return "Bitte bestätige zuerst deine E-Mail-Adresse.";
     if (/password/i.test((e && e.message) || "")) return "Das Passwort muss mindestens 8 Zeichen haben und darf nicht zu einfach sein.";
     if (!code) return "Keine Verbindung zum Server. Bist du online?";
     return (e && e.message) || "Unbekannter Fehler.";
@@ -1162,9 +1169,11 @@
     return { glyphs };
   }
 
+  const isVerified = () => !!(state.user && state.user.emailVerification);
+
   async function loadHand() {
     state.hand = null;
-    if (!aw || !state.user) return;
+    if (!aw || !isVerified()) return;
     try {
       const row = await aw.db.getRow(handRow());
       state.hand = unpackHand(JSON.parse(row.glyphs || "{}"));
@@ -1180,7 +1189,7 @@
     await aw.db.upsertRow({
       ...handRow(),
       data: { glyphs: JSON.stringify(packed) },
-      permissions: [Permission.read(Role.user(uid)), Permission.update(Role.user(uid)), Permission.delete(Role.user(uid))],
+      permissions: [Permission.read(Role.user(uid, "verified")), Permission.update(Role.user(uid, "verified")), Permission.delete(Role.user(uid, "verified"))],
     });
     state.hand = unpackHand(packed);
   }
@@ -1189,7 +1198,7 @@
     const u = state.user;
     els.accountBtn.textContent = u ? (u.name || u.email || "Profil") : "Anmelden";
     els.handLock.hidden = !!(u && state.hand);
-    els.handLock.textContent = u ? "Neu" : "Anmelden";
+    els.handLock.textContent = !u ? "Anmelden" : !isVerified() ? "Bestätigen" : "Neu";
     els.handEdit.hidden = !(u && state.hand);
     if (!isHand() && state.font === HAND_ID) selectFont("Caveat");
   }
@@ -1227,11 +1236,18 @@
       }
       await aw.account.createEmailPasswordSession({ email, password });
       state.user = await aw.account.get();
-      await loadHand();
       els.authPassword.value = "";
       els.authDialog.close();
+      if (!isVerified()) {
+        // Neue Konten bekommen sofort die Mail; bei unbestätigten Anmeldungen nur auf Wunsch erneut
+        if (authRegister) await sendVerification(true);
+        updateAccountUi();
+        openVerify();
+        return;
+      }
+      await loadHand();
       updateAccountUi();
-      toast(authRegister ? "Konto erstellt – willkommen!" : "Angemeldet.");
+      toast("Angemeldet.");
       if (pendingHand) { pendingHand = false; openHandFlow(); }
     } catch (err) {
       els.authError.textContent = authMessage(err);
@@ -1241,13 +1257,77 @@
     }
   }
 
+  /* ---------- E-Mail-Bestätigung ----------
+     Nach der Registrierung schickt Appwrite eine Mail mit einem Link zurück auf diese Seite
+     (?userId=…&secret=…). Erst danach darf das Konto eine Handschrift speichern – das prüft
+     auch der Server, weil die Berechtigungen nur für bestätigte Benutzer gelten. */
+
+  const verifyUrl = () => location.origin + location.pathname;
+
+  async function sendVerification(silent) {
+    els.verifyError.hidden = true;
+    try {
+      await aw.account.createEmailVerification({ url: verifyUrl() });
+      if (!silent) toast("Bestätigungs-Mail wurde erneut gesendet.");
+      return true;
+    } catch (e) {
+      els.verifyError.textContent = "Mail konnte nicht gesendet werden: " + authMessage(e);
+      els.verifyError.hidden = false;
+      return false;
+    }
+  }
+
+  function openVerify() {
+    els.verifyEmail.textContent = (state.user && state.user.email) || "";
+    if (!els.verifyDialog.open) els.verifyDialog.showModal();
+  }
+
+  async function checkVerified() {
+    els.verifyError.hidden = true;
+    try { state.user = await aw.account.get(); } catch (_) {}
+    if (!isVerified()) {
+      els.verifyError.textContent = "Deine E-Mail ist noch nicht bestätigt. Klicke zuerst auf den Link in der Mail.";
+      els.verifyError.hidden = false;
+      return;
+    }
+    els.verifyDialog.close();
+    await afterVerified();
+  }
+
+  async function afterVerified() {
+    await loadHand();
+    updateAccountUi();
+    toast("E-Mail bestätigt – dein Konto ist freigeschaltet.");
+    if (pendingHand || !state.hand) { pendingHand = false; openHandFlow(); }
+  }
+
+  // Link aus der Bestätigungs-Mail verarbeiten
+  async function handleVerifyLink() {
+    const q = new URLSearchParams(location.search);
+    const userId = q.get("userId"), secret = q.get("secret");
+    if (!aw || !userId || !secret) return false;
+    history.replaceState(null, "", location.pathname + location.hash);
+    try {
+      await aw.account.updateEmailVerification({ userId, secret });
+    } catch (e) {
+      toast("Der Bestätigungslink ist ungültig oder abgelaufen. Fordere im Profil einen neuen an.", true);
+      return false;
+    }
+    try { state.user = await aw.account.get(); } catch (_) { state.user = null; }
+    if (state.user) { await afterVerified(); return true; }
+    toast("E-Mail bestätigt – du kannst dich jetzt anmelden.");
+    return true;
+  }
+
   function openProfile() {
     const u = state.user;
     els.profileName.textContent = u.name || "Ohne Namen";
     els.profileEmail.textContent = u.email || "";
+    els.profileVerified.textContent = isVerified() ? "bestätigt" : "nicht bestätigt";
+    els.profileVerified.classList.toggle("ok", isVerified());
     const n = state.hand ? Object.keys(state.hand.glyphs).length : 0;
     els.profileHand.textContent = n ? `Deine Handschrift: ${n} von ${HAND_CHARS.length} Zeichen gezeichnet.` : "Du hast noch keine eigene Handschrift.";
-    els.profileEditHand.textContent = n ? "Handschrift bearbeiten" : "Handschrift erstellen";
+    els.profileEditHand.textContent = !isVerified() ? "E-Mail bestätigen" : n ? "Handschrift bearbeiten" : "Handschrift erstellen";
     els.profileDialog.showModal();
   }
 
@@ -1279,6 +1359,7 @@
 
   function openHandFlow() {
     if (!state.user) { pendingHand = true; openAuth("Für deine eigene Handschrift brauchst du ein Konto – sie wird in deinem Profil gespeichert."); return; }
+    if (!isVerified()) { pendingHand = true; openVerify(); return; }
     // Entwurf aus der gespeicherten Handschrift (Rohdaten, ungeglättet) aufbauen
     pad.draft = {};
     if (state.hand) {
@@ -1444,6 +1525,9 @@
     els.accountBtn.addEventListener("click", () => (state.user ? openProfile() : openAuth()));
     els.profileEditHand.addEventListener("click", () => { els.profileDialog.close(); openHandFlow(); });
     els.logout.addEventListener("click", logout);
+    els.verifyCheck.addEventListener("click", checkVerified);
+    els.verifyResend.addEventListener("click", () => sendVerification(false));
+    els.verifyDialog.addEventListener("close", () => { if (!isVerified()) pendingHand = false; });
     wireHandPad();
   }
 
@@ -1451,6 +1535,7 @@
     if (!aw) return;
     try { state.user = await aw.account.get(); } catch (_) { state.user = null; }
     if (state.user) await loadHand();
+    await handleVerifyLink();
   }
 
   /* ---------- UI-Verdrahtung ---------- */
