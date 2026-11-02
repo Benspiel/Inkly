@@ -80,6 +80,9 @@
     exportGn: $("exportGn"),
     exportPdf: $("exportPdf"),
     toast: $("toast"),
+    fontGrid: $("fontGrid"),
+    fontAdd: $("fontAdd"),
+    fontInput: $("fontInput"),
   };
 
   /* ---------- Hilfsfunktionen ---------- */
@@ -949,6 +952,106 @@
     download(new Blob([buildPdf(state.pages)], { type: "application/pdf" }), `${safeName(els.fileName.value)}.pdf`);
   }
 
+  /* ---------- Eigene Schriften ----------
+     Hochgeladene Schriftdateien werden über die FontFace-API registriert und in IndexedDB
+     gespeichert (localStorage wäre für Schriftdateien schnell zu klein). Jede Schrift bekommt
+     einen eindeutigen internen Familiennamen, damit sie sich nicht mit Systemschriften mischt. */
+
+  const FONT_DB = "inkly", FONT_STORE = "fonts";
+  const FONT_EXT = /\.(ttf|otf|woff2?)$/i;
+  const MAX_FONT_BYTES = 10 * 1024 * 1024;
+
+  function fontDb() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) return reject(new Error("IndexedDB nicht verfügbar"));
+      const req = indexedDB.open(FONT_DB, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(FONT_STORE, { keyPath: "id" });
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function fontStore(mode, fn) {
+    const db = await fontDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(FONT_STORE, mode);
+      const req = fn(tx.objectStore(FONT_STORE));
+      tx.oncomplete = () => { db.close(); resolve(req && req.result); };
+      tx.onerror = tx.onabort = () => { db.close(); reject(tx.error); };
+    });
+  }
+
+  const fontLabel = (fileName) => fileName.replace(FONT_EXT, "").replace(/[-_]+/g, " ").replace(/\s+Regular$/i, "").trim() || "Eigene Schrift";
+
+  async function registerFont(rec) {
+    const face = new FontFace(rec.id, rec.data);
+    await face.load(); // wirft bei ungültigen Dateien
+    document.fonts.add(face);
+    return face;
+  }
+
+  function addFontButton(rec) {
+    const btn = document.createElement("button");
+    btn.className = "option-card selectable custom-font";
+    btn.dataset.value = rec.id;
+    btn.title = rec.name;
+    const sample = document.createElement("span");
+    sample.className = "font-sample";
+    sample.style.fontFamily = `"${rec.id}"`;
+    sample.textContent = rec.name;
+    const remove = document.createElement("span");
+    remove.className = "font-remove";
+    remove.dataset.action = "remove-font";
+    remove.setAttribute("role", "button");
+    remove.setAttribute("aria-label", `${rec.name} entfernen`);
+    remove.textContent = "×";
+    btn.append(sample, remove);
+    els.fontGrid.insertBefore(btn, els.fontAdd);
+    return btn;
+  }
+
+  function selectFont(value) {
+    els.fontGrid.querySelectorAll("[data-value]").forEach((b) => b.classList.toggle("active", b.dataset.value === value));
+    state.font = value;
+    scheduleRender(0);
+  }
+
+  async function addCustomFonts(files) {
+    let last = null;
+    for (const file of files) {
+      if (!FONT_EXT.test(file.name)) { toast(`„${file.name}“ ist keine Schriftdatei (.ttf, .otf, .woff, .woff2).`, true); continue; }
+      if (file.size > MAX_FONT_BYTES) { toast(`„${file.name}“ ist zu groß (max. 10 MB).`, true); continue; }
+      const rec = { id: "Inkly Custom " + newUuid(), name: fontLabel(file.name), data: await file.arrayBuffer() };
+      try {
+        await registerFont(rec);
+      } catch (_) {
+        toast(`„${file.name}“ konnte nicht als Schrift geladen werden.`, true);
+        continue;
+      }
+      try { await fontStore("readwrite", (st) => st.put(rec)); } catch (_) { toast("Schrift geladen, aber konnte nicht dauerhaft gespeichert werden.", true); }
+      addFontButton(rec);
+      last = rec;
+    }
+    if (last) { selectFont(last.id); toast(`Schrift „${last.name}“ hinzugefügt.`); }
+  }
+
+  async function removeCustomFont(btn) {
+    const id = btn.dataset.value;
+    try { await fontStore("readwrite", (st) => st.delete(id)); } catch (_) {}
+    document.fonts.forEach((f) => { if (f.family.replace(/"/g, "") === id) document.fonts.delete(f); });
+    const wasActive = state.font === id;
+    btn.remove();
+    if (wasActive) selectFont("Caveat");
+  }
+
+  async function restoreCustomFonts() {
+    let recs = [];
+    try { recs = (await fontStore("readonly", (st) => st.getAll())) || []; } catch (_) { return; }
+    for (const rec of recs) {
+      try { await registerFont(rec); addFontButton(rec); } catch (_) { /* beschädigt – überspringen */ }
+    }
+  }
+
   /* ---------- UI-Verdrahtung ---------- */
 
   function applyMode() {
@@ -958,6 +1061,12 @@
 
   document.querySelectorAll("[data-group]").forEach((group) => {
     group.addEventListener("click", (e) => {
+      if (e.target.closest('[data-action="remove-font"]')) {
+        e.preventDefault();
+        const b = e.target.closest("[data-value]");
+        if (b) removeCustomFont(b);
+        return;
+      }
       const btn = e.target.closest("[data-value]");
       if (!btn) return;
       group.querySelectorAll("[data-value]").forEach((b) => b.classList.toggle("active", b === btn));
@@ -997,13 +1106,22 @@
     scheduleRender(0);
   });
 
+  els.fontInput.addEventListener("change", async () => {
+    await addCustomFonts([...els.fontInput.files]);
+    els.fontInput.value = "";
+  });
+  ["dragenter", "dragover"].forEach((ev) => els.fontAdd.addEventListener(ev, (e) => { e.preventDefault(); els.fontAdd.classList.add("drag"); }));
+  ["dragleave", "drop"].forEach((ev) => els.fontAdd.addEventListener(ev, (e) => { e.preventDefault(); els.fontAdd.classList.remove("drag"); }));
+  els.fontAdd.addEventListener("drop", (e) => addCustomFonts([...e.dataTransfer.files]));
+
   els.exportGn.addEventListener("click", exportGoodnotes);
   els.exportPdf.addEventListener("click", exportPdf);
 
   applyMode();
 
-  // Gespeicherte eigene Vorlage wiederherstellen
+  // Gespeicherte eigene Schriften und Vorlage wiederherstellen
   (async () => {
+    await restoreCustomFonts();
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
