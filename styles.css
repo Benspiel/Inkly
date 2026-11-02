@@ -139,10 +139,7 @@ button { font: inherit; letter-spacing: inherit; cursor: pointer; }
 .custom-template summary { font-size: 14px; color: var(--store-blue); cursor: pointer; margin-bottom: 12px; }
 .font-sample { font-size: 22px; line-height: 1.2; color: var(--store-ink); }
 .font-sample { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.font-add { cursor: pointer; }
-.font-add .font-sample { color: var(--store-blue); }
-.font-add-label { display: block; font-size: 12px; color: var(--ink-secondary); }
-.font-hint { display: block; margin-top: 8px; font-size: 12px; }
+.hand-label { display: block; font-size: 12px; color: var(--ink-secondary); }
 .font-remove {
   position: absolute; top: 2px; right: 4px; width: 20px; height: 20px; line-height: 18px; border-radius: 50%;
   font-size: 15px; color: var(--ink-tertiary); cursor: pointer;
