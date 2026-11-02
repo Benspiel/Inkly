@@ -77,10 +77,14 @@ Jede Handschrift liegt in einer eigenen Zeile mit der Benutzer-ID als Schlüssel
 
 Eine Website darf ein Appwrite-Konto nicht selbst löschen – dafür gibt es die Function in [`appwrite/functions/delete-account/`](appwrite/functions/delete-account/).
 
-1. In der Konsole unter **Functions → Create function** eine Node.js-Function (Node 22) mit der **Function-ID `delete-account`** anlegen und den Ordner `appwrite/functions/delete-account` hochladen bzw. per Git verbinden. Entrypoint: `src/main.js`, Build-Befehl: `npm install`.
+1. In der Konsole unter **Functions → Create function** das GitHub-Repository verbinden:
+   - **Function ID:** `delete-account` (statt „Auto-generated“) – oder die erzeugte ID in `config.js` bei `deleteFunctionId` eintragen
+   - **Runtime:** beliebiges Node.js ab 16 (die Function hat keine Abhängigkeiten)
+   - **Root directory:** `appwrite/functions/delete-account`
+   - **Entrypoint:** `src/main.js`, **Build-Befehl:** leer lassen
 2. **Settings → Scopes:** `users.write` und `rows.write` aktivieren.
 3. **Settings → Execute access:** Rolle **Users** (angemeldete Benutzer).
-4. **Settings → Environment variables:** `INKLY_DATABASE_ID` und `INKLY_TABLE_ID` mit den IDs aus `config.js` setzen.
+4. **Environment variables:** `INKLY_DATABASE_ID` und `INKLY_TABLE_ID` mit den IDs aus `config.js` setzen.
 
 Die Function löscht immer nur das Konto des aufrufenden Benutzers (Header `x-appwrite-user-id`). Ohne sie löscht „Konto löschen“ nur die Handschrift und meldet einen Fehler.
 
