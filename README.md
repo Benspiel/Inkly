@@ -41,7 +41,7 @@
 | 🎨 **Tintenfarben** | Blau, Schwarz, Grün oder Rot. |
 | 📝 **Mini-Markdown** | `# Überschrift` wird unterstrichen, `- Punkt` wird zur Aufzählung – perfekt für Lernzettel. |
 | 📄 **PDF-Export** | Alternativ als PDF oder als `.goodnotes` mit dem Text als Seitenhintergrund. |
-| 🔒 **Privat** | Alles läuft lokal im Browser. Ein Konto brauchst du nur für „Meine Handschrift“ – dann wird ausschließlich deine gezeichnete Handschrift im Profil gespeichert, nie dein Text. |
+| 🔒 **Privat** | Alles läuft lokal im Browser. Ein Konto brauchst du nur für „Meine Handschrift“ – dann wird ausschließlich deine gezeichnete Handschrift im Profil gespeichert, nie dein Text. Schriften und Bibliotheken liegen lokal – kein Abruf von Google Fonts oder CDNs. |
 
 ---
 
@@ -72,6 +72,21 @@ Anmeldung und Profil laufen über [Appwrite](https://appwrite.io). Ohne Einricht
 4. In `config.js` die `endpoint`- und `projectId`-Werte aus der Konsole eintragen.
 
 Jede Handschrift liegt in einer eigenen Zeile mit der Benutzer-ID als Schlüssel. Nur der Benutzer selbst darf sie lesen, ändern und löschen – und das erst, nachdem er seine E-Mail-Adresse bestätigt hat.
+
+#### Konto löschen (Appwrite Function)
+
+Eine Website darf ein Appwrite-Konto nicht selbst löschen – dafür gibt es die Function in [`appwrite/functions/delete-account/`](appwrite/functions/delete-account/).
+
+1. In der Konsole unter **Functions → Create function** eine Node.js-Function (Node 22) mit der **Function-ID `delete-account`** anlegen und den Ordner `appwrite/functions/delete-account` hochladen bzw. per Git verbinden. Entrypoint: `src/main.js`, Build-Befehl: `npm install`.
+2. **Settings → Scopes:** `users.write` und `rows.write` aktivieren.
+3. **Settings → Execute access:** Rolle **Users** (angemeldete Benutzer).
+4. **Settings → Environment variables:** `INKLY_DATABASE_ID` und `INKLY_TABLE_ID` mit den IDs aus `config.js` setzen.
+
+Die Function löscht immer nur das Konto des aufrufenden Benutzers (Header `x-appwrite-user-id`). Ohne sie löscht „Konto löschen“ nur die Handschrift und meldet einen Fehler.
+
+### ⚖️ Rechtliches
+
+`impressum.html`, `datenschutz.html` und `nutzungsbedingungen.html` sind auf Inkly zugeschnittene Vorlagen. **Vor dem Veröffentlichen die gelb markierten Platzhalter ausfüllen** (Name, Anschrift, E-Mail, Serverstandort) und die Texte prüfen lassen – sie sind keine Rechtsberatung.
 
 ---
 
@@ -116,6 +131,9 @@ Die Python-Werkzeuge zum Untersuchen und Erzeugen von Strichen liegen in [`tools
 ├── styles.css        # Design (angelehnt an ein „Produkt-Showroom“-Designsystem)
 ├── app.js            # Layout, Rendering, Skelettierung, Goodnotes-/PDF-Export, Konto, Handschrift
 ├── config.js         # Appwrite-Verbindung (Projekt-ID eintragen)
+├── impressum.html, datenschutz.html, nutzungsbedingungen.html
+├── vendor/           # Lokale Schriften (Fontsource), JSZip, jsPDF, Appwrite-SDK
+├── appwrite/functions/delete-account/  # Appwrite Function zum Löschen von Konten
 ├── templates.js      # Eingebaute leere Goodnotes-Notizbücher (Base64)
 ├── assets/           # Logo, Favicon, README-Bilder
 └── tools/ink/        # Python: Strichformat dekodieren, prüfen, erzeugen
@@ -133,7 +151,7 @@ Die Python-Werkzeuge zum Untersuchen und Erzeugen von Strichen liegen in [`tools
 
 ## 🙏 Danksagung
 
-- Handschriften von [Google Fonts](https://fonts.google.com/) (SIL Open Font License)
+- Handschriften aus [Google Fonts](https://fonts.google.com/), lokal eingebunden über [Fontsource](https://fontsource.org/) (SIL Open Font License)
 - [JSZip](https://stuk.github.io/jszip/) zum Lesen und Schreiben der Archive
 - [jsPDF](https://github.com/parallax/jsPDF) für den PDF-Export
 - [Appwrite](https://appwrite.io) für Konten und Profile
@@ -142,6 +160,6 @@ Die Python-Werkzeuge zum Untersuchen und Erzeugen von Strichen liegen in [`tools
 
 ## 📄 Lizenz
 
-Der Code von Inkly steht unter der [MIT-Lizenz](LICENSE). Die Handschriften werden von Google Fonts geladen und stehen unter der SIL Open Font License; JSZip und jsPDF haben ihre eigenen Lizenzen.
+Der Code von Inkly steht unter der [MIT-Lizenz](LICENSE). Die Schriften in `vendor/fonts/` stehen unter der SIL Open Font License (Lizenztexte liegen daneben); JSZip, jsPDF und das Appwrite-SDK haben ihre eigenen Lizenzen.
 
 <p align="center"><sub>Mit ✍️ und viel Reverse Engineering gebaut.</sub></p>

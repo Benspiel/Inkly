@@ -5,10 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Inkly – Text zu Goodnotes-Handschrift</title>
   <link rel="icon" href="assets/logo-icon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600&family=Caveat:wght@400;600&family=Kalam:wght@400;700&family=Patrick+Hand&family=Indie+Flower&family=Shadows+Into+Light&family=Gochi+Hand&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="vendor/fonts.css?v=1">
+  <link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
   <div class="announcement-bar" id="announce">
@@ -227,8 +225,9 @@ Tipp: Zeilen mit # werden zu Überschriften, Zeilen mit - zu Aufzählungen.</tex
       <div class="footer-cols">
         <div><h4>Werkzeug</h4><a href="#editor">Editor</a><a href="#so-gehts">So geht's</a></div>
         <div><h4>Hilfe</h4><a href="#faq">FAQ</a></div>
-        <div><h4>Hinweis</h4><span>Nicht mit Goodnotes verbunden. Inoffizielles, experimentelles Werkzeug.</span></div>
+        <div><h4>Rechtliches</h4><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a><a href="nutzungsbedingungen.html">Nutzungsbedingungen</a></div>
       </div>
+      <p class="footer-note">Nicht mit Goodnotes verbunden. Inoffizielles, experimentelles Werkzeug.</p>
       <div class="footer-legal">© 2026 Inkly</div>
     </div>
   </footer>
@@ -245,6 +244,7 @@ Tipp: Zeilen mit # werden zu Überschriften, Zeilen mit - zu Aufzählungen.</tex
       <label class="field">E-Mail<input id="authEmail" type="email" autocomplete="email" required></label>
       <label class="field">Passwort<input id="authPassword" type="password" autocomplete="current-password" minlength="8" required></label>
       <p class="form-error" id="authError" hidden></p>
+      <p class="legal-note" data-register-only hidden>Mit der Registrierung akzeptierst du die <a href="nutzungsbedingungen.html" target="_blank">Nutzungsbedingungen</a>. Wie wir deine Daten verarbeiten, steht in der <a href="datenschutz.html" target="_blank">Datenschutzerklärung</a>.</p>
       <button class="button-store-buy wide" id="authSubmit" type="submit">Anmelden</button>
       <p class="ui-text muted center-text"><span id="authSwitchText">Noch kein Konto?</span> <button type="button" class="text-link-btn" id="authSwitch">Registrieren</button></p>
     </form>
@@ -289,6 +289,25 @@ Tipp: Zeilen mit # werden zu Überschriften, Zeilen mit - zu Aufzählungen.</tex
       <p class="ui-text" id="profileHand"></p>
       <button class="button-store-buy wide" id="profileEditHand" type="button">Handschrift erstellen</button>
       <button class="button-store-cart wide" id="logoutBtn" type="button">Abmelden</button>
+      <div class="profile-links">
+        <button type="button" class="text-link-btn" id="exportData">Meine Daten herunterladen</button>
+        <button type="button" class="text-link-btn danger" id="deleteAccountBtn">Konto löschen</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Konto löschen -->
+  <dialog class="modal" id="deleteDialog">
+    <div class="modal-body">
+      <div class="modal-head">
+        <h3>Konto löschen?</h3>
+        <button type="button" class="modal-close" data-close aria-label="Schließen">×</button>
+      </div>
+      <p class="ui-text">Dein Konto und deine gespeicherte Handschrift werden <b>endgültig gelöscht</b>. Das lässt sich nicht rückgängig machen.</p>
+      <label class="toggle-row confirm-row"><span>Ja, ich möchte mein Konto endgültig löschen.</span><input type="checkbox" id="deleteConfirm" class="switch"></label>
+      <p class="form-error" id="deleteError" hidden></p>
+      <button class="button-store-buy wide danger-bg" id="deleteSubmit" type="button" disabled>Endgültig löschen</button>
+      <button class="button-store-cart wide" data-close type="button">Abbrechen</button>
     </div>
   </dialog>
 
@@ -321,11 +340,11 @@ Tipp: Zeilen mit # werden zu Überschriften, Zeilen mit - zu Aufzählungen.</tex
 
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/appwrite@28.3.0/dist/iife/sdk.js"></script>
+  <script src="vendor/jszip.min.js"></script>
+  <script src="vendor/jspdf.umd.min.js"></script>
+  <script src="vendor/appwrite-28.3.0.js"></script>
   <script src="config.js?v=3"></script>
   <script src="templates.js?v=4"></script>
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>

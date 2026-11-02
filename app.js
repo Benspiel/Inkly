@@ -138,6 +138,12 @@
     verifyCheck: $("verifyCheck"),
     verifyResend: $("verifyResend"),
     profileVerified: $("profileVerified"),
+    exportData: $("exportData"),
+    deleteAccountBtn: $("deleteAccountBtn"),
+    deleteDialog: $("deleteDialog"),
+    deleteConfirm: $("deleteConfirm"),
+    deleteError: $("deleteError"),
+    deleteSubmit: $("deleteSubmit"),
     handVaryBox: $("handVaryBox"),
     handVary: $("handVary"),
     handVaryControls: $("handVaryControls"),
@@ -1085,9 +1091,9 @@
   const AW = window.INKLY_APPWRITE || {};
   const aw = (() => {
     if (!window.Appwrite || !AW.endpoint || !AW.projectId) return null;
-    const { Client, Account, TablesDB } = window.Appwrite;
+    const { Client, Account, TablesDB, Functions } = window.Appwrite;
     const client = new Client().setEndpoint(AW.endpoint).setProject(AW.projectId);
-    return { account: new Account(client), db: new TablesDB(client) };
+    return { account: new Account(client), db: new TablesDB(client), functions: new Functions(client) };
   })();
   const handRow = () => ({ databaseId: AW.databaseId || "inkly", tableId: AW.tableId || "handwriting", rowId: state.user.$id });
 
@@ -1330,6 +1336,57 @@
     els.profileDialog.showModal();
   }
 
+  /* ---------- Datenschutz: Auskunft und Löschung ---------- */
+
+  // Alle über das Konto gespeicherten Daten als JSON herunterladen (Art. 15/20 DSGVO)
+  async function exportMyData() {
+    const u = state.user;
+    let handwriting = null;
+    try { handwriting = JSON.parse((await aw.db.getRow(handRow())).glyphs || "null"); } catch (_) {}
+    const data = {
+      exportiert: new Date().toISOString(),
+      konto: { id: u.$id, name: u.name, email: u.email, emailBestaetigt: u.emailVerification, registriert: u.registration || u.$createdAt },
+      handschrift: handwriting,
+      hinweis: "Dein eingegebener Text wird nie gespeichert und ist deshalb nicht enthalten.",
+    };
+    download(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }), "inkly-meine-daten.json");
+  }
+
+  function openDelete() {
+    els.profileDialog.close();
+    els.deleteConfirm.checked = false;
+    els.deleteSubmit.disabled = true;
+    els.deleteError.hidden = true;
+    els.deleteDialog.showModal();
+  }
+
+  async function deleteAccount() {
+    els.deleteSubmit.disabled = true;
+    els.deleteError.hidden = true;
+    els.deleteSubmit.textContent = "Wird gelöscht …";
+    try {
+      // Handschrift sofort selbst löschen – klappt auch ohne die Function
+      try { await aw.db.deleteRow(handRow()); } catch (e) { if (e && e.code !== 404) throw e; }
+      // Konto über die Appwrite Function löschen (braucht Admin-Rechte, siehe README)
+      const ex = await aw.functions.createExecution({ functionId: AW.deleteFunctionId || "delete-account", body: "", async: false, method: "POST" });
+      let ok = ex && ex.responseStatusCode === 200;
+      try { ok = ok && JSON.parse(ex.responseBody || "{}").ok; } catch (_) { ok = false; }
+      if (!ok) throw new Error("function");
+      state.user = null;
+      state.hand = null;
+      els.deleteDialog.close();
+      updateAccountUi();
+      scheduleRender(0);
+      toast("Dein Konto wurde gelöscht.");
+    } catch (e) {
+      els.deleteError.textContent = "Dein Konto konnte nicht vollständig gelöscht werden. Deine Handschrift ist bereits gelöscht. Bitte versuch es später noch einmal oder schreib uns (siehe Impressum).";
+      els.deleteError.hidden = false;
+      els.deleteSubmit.disabled = !els.deleteConfirm.checked;
+    } finally {
+      els.deleteSubmit.textContent = "Endgültig löschen";
+    }
+  }
+
   async function logout() {
     try { await aw.account.deleteSession({ sessionId: "current" }); } catch (_) {}
     state.user = null;
@@ -1524,6 +1581,10 @@
     els.accountBtn.addEventListener("click", () => (state.user ? openProfile() : openAuth()));
     els.profileEditHand.addEventListener("click", () => { els.profileDialog.close(); openHandFlow(); });
     els.logout.addEventListener("click", logout);
+    els.exportData.addEventListener("click", () => exportMyData().catch(() => toast("Daten konnten nicht geladen werden.", true)));
+    els.deleteAccountBtn.addEventListener("click", openDelete);
+    els.deleteConfirm.addEventListener("change", () => { els.deleteSubmit.disabled = !els.deleteConfirm.checked; });
+    els.deleteSubmit.addEventListener("click", deleteAccount);
     els.verifyCheck.addEventListener("click", () => checkVerified(false));
     els.verifyResend.addEventListener("click", () => sendVerification(false));
     els.verifyDialog.addEventListener("close", () => { clearInterval(verifyPoll); if (!isVerified()) pendingHand = false; });
