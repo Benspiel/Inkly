@@ -258,6 +258,13 @@ input[type=range] { width: 100%; accent-color: var(--store-blue); }
 .verify-icon { font-size: 40px; text-align: center; color: var(--store-blue); line-height: 1; }
 .verify-badge { font-size: 12px; padding: 1px 8px; border-radius: 9999px; background: var(--fog); color: var(--ink-secondary); white-space: nowrap; }
 .verify-badge.ok { background: var(--store-blue-tint); color: var(--store-blue); }
+.profile-links { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.text-link-btn.danger { color: var(--error); }
+.danger-bg { background: var(--error); }
+.confirm-row { margin: 0; }
+.legal-note { margin: 0; font-size: 12px; color: var(--ink-secondary); }
+.legal-note a { color: var(--store-blue); }
+.footer-note { margin: 16px 0 0; }
 .profile-name { margin: 0; font-size: 18px; font-weight: 600; }
 .hand-current { display: flex; align-items: baseline; justify-content: space-between; }
 .hand-char { font: 600 32px/1 "Open Sans", sans-serif; color: var(--store-blue); min-width: 40px; }
@@ -318,3 +325,14 @@ input[type=range] { width: 100%; accent-color: var(--store-blue); }
 .mode-card .ui-text { display: block; margin-top: 4px; }
 .ink-sample { display: block; width: 100%; height: 30px; }
 [hidden] { display: none !important; }
+
+/* Rechtstexte (Impressum, Datenschutz, Nutzungsbedingungen) */
+.legal { max-width: 760px; padding: 48px 16px 80px; }
+.legal h1 { font-size: 36px; letter-spacing: -1px; margin: 0 0 8px; }
+.legal h2 { font-size: 20px; margin: 36px 0 8px; }
+.legal h3 { font-size: 16px; margin: 20px 0 4px; }
+.legal p, .legal li { font-size: 15px; line-height: 1.65; color: var(--graphite); }
+.legal ul { padding-left: 20px; }
+.legal a { color: var(--store-blue); }
+.legal .stand { color: var(--ink-tertiary); font-size: 14px; }
+.todo { background: #fff3bf; color: #7a5a00; padding: 0 4px; border-radius: 4px; }
