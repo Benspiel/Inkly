@@ -35,7 +35,7 @@
 |---|---|
 | ✍️ **Echte Goodnotes-Tinte** | Jeder Buchstabe wird als echter Goodnotes-Stiftstrich gespeichert – **radieren, mit dem Lasso auswählen, verschieben, umfärben**, als hättest du selbst geschrieben. |
 | 👀 **Live-Vorschau** | Tippen und sofort sehen, wie die Seite aussieht. Die Vorschau entspricht exakt dem Export. |
-| 🖋️ **6 Handschriften** | Caveat, Kalam, Patrick Hand, Indie Flower, Shadows Into Light und Gochi Hand – mit einstellbarer Größe, Strichstärke und „Unregelmäßigkeit“. |
+| 🖋️ **6 Handschriften** | Caveat, Kalam, Patrick Hand, Indie Flower, Shadows Into Light und Gochi Hand – mit einstellbarer Größe, Strichstärke und „Unregelmäßigkeit“. Oder **eigene Schrift** (.ttf, .otf, .woff, .woff2) hochladen. |
 | 📓 **Originales Goodnotes-Papier** | Liniert, eng liniert, kariert oder blanko – die Linien kommen 1:1 aus echten Goodnotes-Notizbüchern. |
 | 🎨 **Tintenfarben** | Blau, Schwarz, Grün oder Rot. |
 | 📝 **Mini-Markdown** | `# Überschrift` wird unterstrichen, `- Punkt` wird zur Aufzählung – perfekt für Lernzettel. |
