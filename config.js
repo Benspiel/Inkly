@@ -4,6 +4,6 @@
 window.INKLY_APPWRITE = {
   endpoint: "https://appwrite.buchholz.dev/v1",
   projectId: "6ae850330009b4ce35f1",
-  databaseId: "inkly",
-  tableId: "handwriting",
+  databaseId: "6ae854a1002895208cfc",
+  tableId: "6ae854bd002ded65bf10",
 };
