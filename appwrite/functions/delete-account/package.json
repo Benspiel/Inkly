@@ -1,10 +1,6 @@
 {
   "name": "inkly-delete-account",
   "version": "1.0.0",
-  "description": "Inkly: löscht das Konto des aufrufenden Benutzers samt Handschrift.",
-  "type": "module",
-  "main": "src/main.js",
-  "dependencies": {
-    "node-appwrite": "29.4.0"
-  }
+  "description": "Inkly: löscht das Konto des aufrufenden Benutzers samt Handschrift. Ohne Abhängigkeiten, läuft ab Node.js 16.",
+  "main": "src/main.js"
 }
