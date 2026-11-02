@@ -35,9 +35,9 @@
 |---|---|
 | ✍️ **Echte Goodnotes-Tinte** | Jeder Buchstabe wird als echter Goodnotes-Stiftstrich gespeichert – **radieren, mit dem Lasso auswählen, verschieben, umfärben**, als hättest du selbst geschrieben. |
 | 👀 **Live-Vorschau** | Tippen und sofort sehen, wie die Seite aussieht. Die Vorschau entspricht exakt dem Export. |
-| 🖋️ **6 Handschriften** | Caveat, Kalam, Patrick Hand, Indie Flower, Shadows Into Light und Gochi Hand – mit einstellbarer Größe, Strichstärke und „Unregelmäßigkeit“. Oder **eigene Schrift** (.ttf, .otf, .woff, .woff2) hochladen. |
+| 🖋️ **6 Handschriften** | Caveat, Kalam, Patrick Hand, Indie Flower, Shadows Into Light und Gochi Hand – mit einstellbarer Größe, Strichstärke und „Unregelmäßigkeit“. |
 | 📓 **Originales Goodnotes-Papier** | Liniert, eng liniert, kariert oder blanko – die Linien kommen 1:1 aus echten Goodnotes-Notizbüchern. |
-| ✍️ **Meine Handschrift** | Mit Konto: jedes Zeichen einmal selbst schreiben – Inkly schreibt deinen Text dann in **deiner eigenen Handschrift**. Gespeichert im Profil, auf jedem Gerät verfügbar. |
+| ✍️ **Meine Handschrift** | Mit Konto: jedes Zeichen einmal selbst schreiben – Inkly schreibt deinen Text dann in **deiner eigenen Handschrift**. Mit **„Striche variieren“** sieht jeder Buchstabe bei jedem Vorkommen etwas anders aus. Gespeichert im Profil, auf jedem Gerät verfügbar. |
 | 🎨 **Tintenfarben** | Blau, Schwarz, Grün oder Rot. |
 | 📝 **Mini-Markdown** | `# Überschrift` wird unterstrichen, `- Punkt` wird zur Aufzählung – perfekt für Lernzettel. |
 | 📄 **PDF-Export** | Alternativ als PDF oder als `.goodnotes` mit dem Text als Seitenhintergrund. |

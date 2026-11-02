@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600&family=Caveat:wght@400;600&family=Kalam:wght@400;700&family=Patrick+Hand&family=Indie+Flower&family=Shadows+Into+Light&family=Gochi+Hand&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
   <div class="announcement-bar" id="announce">
@@ -88,17 +88,11 @@ Tipp: Zeilen mit # werden zu Überschriften, Zeilen mit - zu Aufzählungen.</tex
         <button class="option-card selectable" data-value="Gochi Hand"><span class="font-sample" style="font-family:'Gochi Hand'">Gochi</span></button>
         <button class="option-card selectable hand-tile" id="handTile" data-value="__hand__" title="Deine eigene Handschrift">
           <span class="font-sample">✍︎</span>
-          <span class="font-add-label" id="handTileLabel">Meine Handschrift</span>
+          <span class="hand-label" id="handTileLabel">Meine Handschrift</span>
           <span class="hand-lock" id="handLock">Anmelden</span>
           <span class="font-remove hand-edit" id="handEdit" data-action="edit-hand" role="button" aria-label="Handschrift bearbeiten" hidden>✎</span>
         </button>
-        <label class="option-card selectable dropzone font-add" id="fontAdd" title="Eigene Schrift hinzufügen (.ttf, .otf, .woff, .woff2)">
-          <input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" multiple hidden>
-          <span class="font-sample">+</span>
-          <span class="font-add-label">Eigene Schrift</span>
-        </label>
       </div>
-      <p class="caption-muted font-hint">Eigene Schrift als .ttf, .otf, .woff oder .woff2 hinzufügen – sie bleibt in deinem Browser gespeichert.</p>
 
       <div class="field-label">Papier</div>
       <div class="option-grid" data-group="paper">
@@ -126,6 +120,17 @@ Tipp: Zeilen mit # werden zu Überschriften, Zeilen mit - zu Aufzählungen.</tex
 
       <div class="field-label">Unregelmäßigkeit <span id="jitterVal" class="caption-muted">mittel</span></div>
       <input type="range" id="jitterInput" min="0" max="2" step="0.1" value="1">
+
+      <div id="handVaryBox" hidden>
+        <label class="toggle-row">
+          <span>Striche variieren <span class="caption-muted">· Meine Handschrift</span></span>
+          <input type="checkbox" id="handVary" class="switch">
+        </label>
+        <div id="handVaryControls" hidden>
+          <div class="field-label">Variation <span id="handVaryVal" class="caption-muted">mittel</span></div>
+          <input type="range" id="handVaryInput" min="0.2" max="2" step="0.1" value="1">
+        </div>
+      </div>
 
       <div class="benefits-panel">
         <div>✓ Keine Vorlage nötig – echte Goodnotes-Notizbücher sind eingebaut.</div>
@@ -204,10 +209,6 @@ Tipp: Zeilen mit # werden zu Überschriften, Zeilen mit - zu Aufzählungen.</tex
       <p>Ja, unter „Eigene Vorlage verwenden“ – etwa für ein anderes Seitenformat. Nutze ein leeres, einseitiges Notizbuch: Bestehende Stiftstriche aus der Vorlage bleiben erhalten und lägen sonst über deinem Text.</p>
     </details>
     <details class="faq-row">
-      <summary>Kann ich meine eigene Schrift verwenden?</summary>
-      <p>Ja. Klicke unter „Handschrift“ auf „+ Eigene Schrift“ oder ziehe eine .ttf-, .otf-, .woff- oder .woff2-Datei darauf. Die Schrift wird nur in deinem Browser gespeichert (nicht hochgeladen) und steht beim nächsten Besuch wieder bereit. Über das × entfernst du sie wieder. Tipp: Für „Echte Tinte“ eignen sich schmale, handschriftliche Schriften am besten – sehr fette oder verzierte Schriften ergeben unsaubere Striche.</p>
-    </details>
-    <details class="faq-row">
       <summary>Wie nutze ich meine eigene Handschrift?</summary>
       <p>Registriere dich (oben rechts) und bestätige deine E-Mail-Adresse über den Link in der Bestätigungs-Mail. Dann tippe unter „Handschrift“ auf „Meine Handschrift“. Dann schreibst du jedes Zeichen einmal mit Finger, Stift oder Maus. Deine Handschrift wird in deinem Profil gespeichert und steht dir auf jedem Gerät zur Verfügung, auf dem du angemeldet bist. Zeichen, die du nicht gezeichnet hast, werden ausgelassen.</p>
     </details>
@@ -265,6 +266,17 @@ Tipp: Zeilen mit # werden zu Überschriften, Zeilen mit - zu Aufzählungen.</tex
     </div>
   </dialog>
 
+  <!-- Bestätigt (im Tab aus der Mail, wenn Inkly schon in einem anderen Tab offen ist) -->
+  <dialog class="modal" id="verifiedDialog">
+    <div class="modal-body">
+      <div class="verify-icon" aria-hidden="true">✓</div>
+      <h3 class="center-text">E-Mail bestätigt!</h3>
+      <p class="ui-text center-text">Dein Konto ist freigeschaltet. Geh zurück zu deinem ersten Inkly-Tab – dort geht es automatisch weiter.</p>
+      <button class="button-store-buy wide" id="verifiedClose" type="button">Diesen Tab schließen</button>
+      <button class="text-link-btn" id="verifiedStay" type="button">Lieber hier weitermachen</button>
+    </div>
+  </dialog>
+
   <!-- Profil -->
   <dialog class="modal" id="profileDialog">
     <div class="modal-body">
@@ -314,6 +326,6 @@ Tipp: Zeilen mit # werden zu Überschriften, Zeilen mit - zu Aufzählungen.</tex
   <script src="https://cdn.jsdelivr.net/npm/appwrite@28.3.0/dist/iife/sdk.js"></script>
   <script src="config.js?v=3"></script>
   <script src="templates.js?v=4"></script>
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>
