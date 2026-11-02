@@ -54,7 +54,25 @@
     builtin: {},  // Cache der eingebauten Vorlagen
     pages: [],    // Vorschau-Canvas je Seite
     inkPages: [], // Striche je Seite (Pixelkoordinaten der Vorschau)
+    user: null,   // angemeldetes Appwrite-Konto
+    hand: null,   // eigene Handschrift { glyphs: { ch: { adv, strokes: [[x, y], …][] } } } in Geviert-Einheiten
   };
+
+  // Eigene, selbst gezeichnete Handschrift (Profil). Wird statt einer Schriftdatei verwendet.
+  const HAND_ID = "__hand__";
+  const HAND_W = 0.075;      // Strichbreite in Geviert-Einheiten
+  const HAND_SPACE = 0.32;   // Breite eines Leerzeichens
+  const HAND_MISSING = 0.45; // Vorschub für nicht gezeichnete Zeichen
+  const HAND_ALIAS = { "„": '"', "“": '"', "”": '"', "«": '"', "»": '"', "‚": "'", "‘": "'", "’": "'", "–": "-", "—": "-", "•": "." };
+  const isHand = () => state.font === HAND_ID && !!state.hand;
+  function handGlyph(ch) {
+    const g = state.hand && state.hand.glyphs;
+    if (!g) return null;
+    if (g[ch]) return g[ch];
+    const alt = HAND_ALIAS[ch] || (ch === ch.toLowerCase() ? ch.toUpperCase() : ch.toLowerCase());
+    return g[alt] || null;
+  }
+  const handAdvance = (ch) => (ch.trim() ? (handGlyph(ch) || { adv: HAND_MISSING }).adv : HAND_SPACE);
 
   const $ = (id) => document.getElementById(id);
   const els = {
@@ -83,6 +101,44 @@
     fontGrid: $("fontGrid"),
     fontAdd: $("fontAdd"),
     fontInput: $("fontInput"),
+    handTile: $("handTile"),
+    handLock: $("handLock"),
+    handEdit: $("handEdit"),
+    accountBtn: $("accountBtn"),
+    authDialog: $("authDialog"),
+    authForm: $("authForm"),
+    authTitle: $("authTitle"),
+    authReason: $("authReason"),
+    authName: $("authName"),
+    authEmail: $("authEmail"),
+    authPassword: $("authPassword"),
+    authError: $("authError"),
+    authSubmit: $("authSubmit"),
+    authSwitch: $("authSwitch"),
+    authSwitchText: $("authSwitchText"),
+    profileDialog: $("profileDialog"),
+    profileName: $("profileName"),
+    profileEmail: $("profileEmail"),
+    profileHand: $("profileHand"),
+    profileEditHand: $("profileEditHand"),
+    logout: $("logoutBtn"),
+    handDialog: $("handDialog"),
+    handChar: $("handChar"),
+    handProgress: $("handProgress"),
+    handPad: $("handPad"),
+    handPrev: $("handPrev"),
+    handNext: $("handNext"),
+    handUndo: $("handUndo"),
+    handClear: $("handClear"),
+    handStrip: $("handStrip"),
+    handSave: $("handSave"),
+    handSaveInfo: $("handSaveInfo"),
+    verifyDialog: $("verifyDialog"),
+    verifyEmail: $("verifyEmail"),
+    verifyError: $("verifyError"),
+    verifyCheck: $("verifyCheck"),
+    verifyResend: $("verifyResend"),
+    profileVerified: $("profileVerified"),
   };
 
   /* ---------- Hilfsfunktionen ---------- */
@@ -334,6 +390,7 @@
   }
 
   function fontSpec(px, bold) {
+    if (state.font === HAND_ID) return `400 ${px}px "Caveat"`;
     const weight = bold ? ({ Caveat: 600, Kalam: 700 }[state.font] || 400) : 400;
     return `${weight} ${px}px "${state.font}"`;
   }
@@ -347,6 +404,11 @@
   const skeletonCache = new Map();
 
   function glyphSkeleton(bold, ch) {
+    if (isHand()) {
+      const gl = handGlyph(ch);
+      const w = HAND_W * (bold ? 1.35 : 1);
+      return { strokes: gl ? gl.strokes.map((pts) => ({ pts, w })) : [] };
+    }
     const spec = fontSpec(SKEL_EM, bold);
     const key = spec + "|" + ch;
     if (skeletonCache.has(key)) return skeletonCache.get(key);
@@ -496,9 +558,15 @@
   // Messschnittstelle: setSize(px, bold) + width(text)
   function makeMeasurer() {
     const ctx = document.createElement("canvas").getContext("2d");
+    let size = 1;
     return {
-      setSize(px, bold) { ctx.font = fontSpec(px, bold); },
-      width(s) { let w = 0; for (const ch of s) w += charWidth(ctx, ch); return w; },
+      setSize(px, bold) { size = px; ctx.font = fontSpec(px, bold); },
+      width(s) {
+        let w = 0;
+        if (isHand()) { for (const ch of s) w += handAdvance(ch) * size; return w; }
+        for (const ch of s) w += charWidth(ctx, ch);
+        return w;
+      },
     };
   }
 
@@ -600,7 +668,13 @@
   }
 
   // PDF-Modus: Umrissschrift Zeichen für Zeichen leicht variiert auf die Seite malen.
-  function drawOutlineLine(ctx, m, l, x, y, rnd) {
+  function drawOutlineLine(ctx, m, l, x, y, rnd, g) {
+    if (isHand()) {
+      const strokes = [];
+      inkLineStrokes(m, l, x, y, rnd, strokes, g);
+      drawInkStrokes(ctx, strokes, g);
+      return;
+    }
     const j = state.jitter;
     ctx.font = fontSpec(l.size, l.bold);
     const drift = (rnd() - 0.5) * 6 * j;
@@ -725,7 +799,7 @@
             ctx.arc(g.left + l.indent * 0.35, y - g.base * 0.22, g.base * 0.08, 0, Math.PI * 2);
             ctx.fill();
           }
-          drawOutlineLine(ctx, m, l, x, y, rnd);
+          drawOutlineLine(ctx, m, l, x, y, rnd, g);
         }
       }
       if (ink) {
@@ -734,7 +808,7 @@
       } else if (pages.length > 1) {
         ctx.fillStyle = state.ink;
         ctx.globalAlpha = 0.5;
-        ctx.font = `400 ${Math.round(g.base * 0.6)}px "${state.font}"`;
+        ctx.font = fontSpec(Math.round(g.base * 0.6), false);
         ctx.textAlign = "right";
         ctx.fillText(`${pi + 1}/${pages.length}`, g.W - 30 * g.k, g.H - 12 * g.k);
         ctx.globalAlpha = 1;
@@ -1052,6 +1126,418 @@
     }
   }
 
+  /* ---------- Konto (Appwrite) ----------
+     Anmeldung und Profil laufen über Appwrite (Konfiguration in config.js). Die eigene
+     Handschrift liegt als JSON in einer Tabellenzeile, deren ID die Benutzer-ID ist und die
+     nur der Benutzer selbst lesen und ändern darf. */
+
+  const AW = window.INKLY_APPWRITE || {};
+  const aw = (() => {
+    if (!window.Appwrite || !AW.endpoint || !AW.projectId) return null;
+    const { Client, Account, TablesDB } = window.Appwrite;
+    const client = new Client().setEndpoint(AW.endpoint).setProject(AW.projectId);
+    return { account: new Account(client), db: new TablesDB(client) };
+  })();
+  const handRow = () => ({ databaseId: AW.databaseId || "inkly", tableId: AW.tableId || "handwriting", rowId: state.user.$id });
+
+  function authMessage(e) {
+    const code = e && e.code, type = (e && e.type) || "";
+    if (type === "user_already_exists" || code === 409) return "Zu dieser E-Mail gibt es schon ein Konto. Bitte melde dich an.";
+    if (type === "user_invalid_credentials" || code === 401) return "E-Mail oder Passwort ist falsch.";
+    if (type === "general_rate_limit_exceeded" || code === 429) return "Zu viele Versuche. Bitte warte kurz.";
+    if (type === "user_unauthorized" || code === 403) return "Bitte bestätige zuerst deine E-Mail-Adresse.";
+    if (/password/i.test((e && e.message) || "")) return "Das Passwort muss mindestens 8 Zeichen haben und darf nicht zu einfach sein.";
+    if (!code) return "Keine Verbindung zum Server. Bist du online?";
+    return (e && e.message) || "Unbekannter Fehler.";
+  }
+
+  // Gespeicherte Handschrift (ganzzahlig, 1/1000 Geviert) -> Laufzeitformat mit geglätteten Strichen
+  function unpackHand(data) {
+    const glyphs = {};
+    for (const [ch, g] of Object.entries((data && data.glyphs) || {})) {
+      glyphs[ch] = {
+        adv: g.a / 1000,
+        raw: g.s,
+        strokes: g.s.map((flat) => {
+          let pts = [];
+          for (let i = 0; i + 1 < flat.length; i += 2) pts.push([flat[i] / 1000, flat[i + 1] / 1000]);
+          if (pts.length > 2) pts = chaikin(chaikin(pts));
+          return pts;
+        }),
+      };
+    }
+    return { glyphs };
+  }
+
+  const isVerified = () => !!(state.user && state.user.emailVerification);
+
+  async function loadHand() {
+    state.hand = null;
+    if (!aw || !isVerified()) return;
+    try {
+      const row = await aw.db.getRow(handRow());
+      state.hand = unpackHand(JSON.parse(row.glyphs || "{}"));
+      if (!Object.keys(state.hand.glyphs).length) state.hand = null;
+    } catch (e) {
+      if (e && e.code !== 404) toast("Handschrift konnte nicht geladen werden.", true);
+    }
+  }
+
+  async function saveHand(packed) {
+    const { Permission, Role } = window.Appwrite;
+    const uid = state.user.$id;
+    await aw.db.upsertRow({
+      ...handRow(),
+      data: { glyphs: JSON.stringify(packed) },
+      permissions: [Permission.read(Role.user(uid, "verified")), Permission.update(Role.user(uid, "verified")), Permission.delete(Role.user(uid, "verified"))],
+    });
+    state.hand = unpackHand(packed);
+  }
+
+  function updateAccountUi() {
+    const u = state.user;
+    els.accountBtn.textContent = u ? (u.name || u.email || "Profil") : "Anmelden";
+    els.handLock.hidden = !!(u && state.hand);
+    els.handLock.textContent = !u ? "Anmelden" : !isVerified() ? "Bestätigen" : "Neu";
+    els.handEdit.hidden = !(u && state.hand);
+    if (!isHand() && state.font === HAND_ID) selectFont("Caveat");
+  }
+
+  let authRegister = false;
+  function openAuth(reason) {
+    if (!aw) {
+      toast("Die Anmeldung ist noch nicht eingerichtet (Appwrite-Projekt in config.js eintragen).", true);
+      return;
+    }
+    els.authReason.textContent = reason || "Melde dich an, um deine eigene Handschrift in deinem Profil zu speichern.";
+    setAuthMode(false);
+    els.authError.hidden = true;
+    els.authDialog.showModal();
+    els.authEmail.focus();
+  }
+  function setAuthMode(register) {
+    authRegister = register;
+    els.authTitle.textContent = register ? "Konto erstellen" : "Anmelden";
+    els.authSubmit.textContent = register ? "Registrieren" : "Anmelden";
+    els.authSwitchText.textContent = register ? "Schon ein Konto?" : "Noch kein Konto?";
+    els.authSwitch.textContent = register ? "Anmelden" : "Registrieren";
+    els.authPassword.autocomplete = register ? "new-password" : "current-password";
+    els.authForm.querySelectorAll("[data-register-only]").forEach((el) => { el.hidden = !register; });
+  }
+
+  async function submitAuth(e) {
+    e.preventDefault();
+    const email = els.authEmail.value.trim(), password = els.authPassword.value;
+    els.authSubmit.disabled = true;
+    els.authError.hidden = true;
+    try {
+      if (authRegister) {
+        await aw.account.create({ userId: window.Appwrite.ID.unique(), email, password, name: els.authName.value.trim() || undefined });
+      }
+      await aw.account.createEmailPasswordSession({ email, password });
+      state.user = await aw.account.get();
+      els.authPassword.value = "";
+      els.authDialog.close();
+      if (!isVerified()) {
+        // Neue Konten bekommen sofort die Mail; bei unbestätigten Anmeldungen nur auf Wunsch erneut
+        if (authRegister) await sendVerification(true);
+        updateAccountUi();
+        openVerify();
+        return;
+      }
+      await loadHand();
+      updateAccountUi();
+      toast("Angemeldet.");
+      if (pendingHand) { pendingHand = false; openHandFlow(); }
+    } catch (err) {
+      els.authError.textContent = authMessage(err);
+      els.authError.hidden = false;
+    } finally {
+      els.authSubmit.disabled = false;
+    }
+  }
+
+  /* ---------- E-Mail-Bestätigung ----------
+     Nach der Registrierung schickt Appwrite eine Mail mit einem Link zurück auf diese Seite
+     (?userId=…&secret=…). Erst danach darf das Konto eine Handschrift speichern – das prüft
+     auch der Server, weil die Berechtigungen nur für bestätigte Benutzer gelten. */
+
+  const verifyUrl = () => location.origin + location.pathname;
+
+  async function sendVerification(silent) {
+    els.verifyError.hidden = true;
+    try {
+      await aw.account.createEmailVerification({ url: verifyUrl() });
+      if (!silent) toast("Bestätigungs-Mail wurde erneut gesendet.");
+      return true;
+    } catch (e) {
+      els.verifyError.textContent = "Mail konnte nicht gesendet werden: " + authMessage(e);
+      els.verifyError.hidden = false;
+      return false;
+    }
+  }
+
+  function openVerify() {
+    els.verifyEmail.textContent = (state.user && state.user.email) || "";
+    if (!els.verifyDialog.open) els.verifyDialog.showModal();
+  }
+
+  async function checkVerified() {
+    els.verifyError.hidden = true;
+    try { state.user = await aw.account.get(); } catch (_) {}
+    if (!isVerified()) {
+      els.verifyError.textContent = "Deine E-Mail ist noch nicht bestätigt. Klicke zuerst auf den Link in der Mail.";
+      els.verifyError.hidden = false;
+      return;
+    }
+    els.verifyDialog.close();
+    await afterVerified();
+  }
+
+  async function afterVerified() {
+    await loadHand();
+    updateAccountUi();
+    toast("E-Mail bestätigt – dein Konto ist freigeschaltet.");
+    if (pendingHand || !state.hand) { pendingHand = false; openHandFlow(); }
+  }
+
+  // Link aus der Bestätigungs-Mail verarbeiten
+  async function handleVerifyLink() {
+    const q = new URLSearchParams(location.search);
+    const userId = q.get("userId"), secret = q.get("secret");
+    if (!aw || !userId || !secret) return false;
+    history.replaceState(null, "", location.pathname + location.hash);
+    try {
+      await aw.account.updateEmailVerification({ userId, secret });
+    } catch (e) {
+      toast("Der Bestätigungslink ist ungültig oder abgelaufen. Fordere im Profil einen neuen an.", true);
+      return false;
+    }
+    try { state.user = await aw.account.get(); } catch (_) { state.user = null; }
+    if (state.user) { await afterVerified(); return true; }
+    toast("E-Mail bestätigt – du kannst dich jetzt anmelden.");
+    return true;
+  }
+
+  function openProfile() {
+    const u = state.user;
+    els.profileName.textContent = u.name || "Ohne Namen";
+    els.profileEmail.textContent = u.email || "";
+    els.profileVerified.textContent = isVerified() ? "bestätigt" : "nicht bestätigt";
+    els.profileVerified.classList.toggle("ok", isVerified());
+    const n = state.hand ? Object.keys(state.hand.glyphs).length : 0;
+    els.profileHand.textContent = n ? `Deine Handschrift: ${n} von ${HAND_CHARS.length} Zeichen gezeichnet.` : "Du hast noch keine eigene Handschrift.";
+    els.profileEditHand.textContent = !isVerified() ? "E-Mail bestätigen" : n ? "Handschrift bearbeiten" : "Handschrift erstellen";
+    els.profileDialog.showModal();
+  }
+
+  async function logout() {
+    try { await aw.account.deleteSession({ sessionId: "current" }); } catch (_) {}
+    state.user = null;
+    state.hand = null;
+    els.profileDialog.close();
+    updateAccountUi();
+    scheduleRender(0);
+    toast("Abgemeldet.");
+  }
+
+  /* ---------- Handschrift zeichnen ----------
+     Ein Zeichen nach dem anderen wird ins Feld geschrieben. Koordinaten werden direkt in
+     Geviert-Einheiten gespeichert (Ursprung: Grundlinie, links), wie die skelettierten
+     Schriftzeichen – die Striche sind schon Mittellinien und brauchen keine Skelettierung. */
+
+  const HAND_CHARS = [
+    ..."abcdefghijklmnopqrstuvwxyzäöüß",
+    ..."ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ",
+    ..."0123456789",
+    ...".,:;!?-()\"'/+=&%",
+  ];
+  // Feldgeometrie relativ zur Feldhöhe: Grundlinie und Geviertgröße
+  const PAD_BASE = 0.7, PAD_EM = 0.5;
+  let pendingHand = false;
+  const pad = { draft: {}, idx: 0, drawing: null };
+
+  function openHandFlow() {
+    if (!state.user) { pendingHand = true; openAuth("Für deine eigene Handschrift brauchst du ein Konto – sie wird in deinem Profil gespeichert."); return; }
+    if (!isVerified()) { pendingHand = true; openVerify(); return; }
+    // Entwurf aus der gespeicherten Handschrift (Rohdaten, ungeglättet) aufbauen
+    pad.draft = {};
+    if (state.hand) {
+      for (const [ch, g] of Object.entries(state.hand.glyphs)) {
+        pad.draft[ch] = g.raw.map((flat) => {
+          const pts = [];
+          for (let i = 0; i + 1 < flat.length; i += 2) pts.push([flat[i] / 1000, flat[i + 1] / 1000]);
+          return pts;
+        });
+      }
+    }
+    pad.idx = Math.max(0, HAND_CHARS.findIndex((c) => !pad.draft[c]));
+    els.handSaveInfo.textContent = "";
+    els.handDialog.showModal();
+    sizePad();
+    updatePad();
+  }
+
+  function sizePad() {
+    const c = els.handPad, r = c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    c.width = Math.round(r.width * dpr);
+    c.height = Math.round(r.height * dpr);
+  }
+
+  // Zeichenfeld-Pixel <-> Geviert-Einheiten. Gezeichnet wird ab ~1/4 der Breite.
+  const padEm = () => els.handPad.height * PAD_EM;
+  const padOrigin = () => [els.handPad.width * 0.3, els.handPad.height * PAD_BASE];
+
+  function drawPad() {
+    const c = els.handPad, ctx = c.getContext("2d"), em = padEm(), [ox, oy] = padOrigin();
+    ctx.clearRect(0, 0, c.width, c.height);
+    const line = (yEm, color, dash) => {
+      ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = Math.max(1, em * 0.008); ctx.setLineDash(dash || []);
+      ctx.beginPath(); ctx.moveTo(0, oy + yEm * em); ctx.lineTo(c.width, oy + yEm * em); ctx.stroke(); ctx.restore();
+    };
+    line(-0.72, "#e3e5e6", [em * 0.04, em * 0.04]); // Oberlänge / Großbuchstaben
+    line(-0.42, "#d0d2d3", [em * 0.04, em * 0.04]); // x-Höhe
+    line(0, "#8c8c8c");                              // Grundlinie
+    line(0.28, "#e3e5e6", [em * 0.04, em * 0.04]);  // Unterlänge
+    // Vorlage des Zeichens als blasse Hilfe
+    const ch = HAND_CHARS[pad.idx];
+    const strokes = pad.draft[ch] || [];
+    if (!strokes.length) {
+      ctx.save(); ctx.fillStyle = "#eef0f2"; ctx.font = `400 ${em}px "Caveat", cursive`;
+      ctx.fillText(ch, ox, oy); ctx.restore();
+    }
+    ctx.save();
+    ctx.strokeStyle = ctx.fillStyle = state.ink; ctx.lineWidth = HAND_W * em; ctx.lineCap = ctx.lineJoin = "round";
+    for (const st of strokes) {
+      if (st.length === 1) { ctx.beginPath(); ctx.arc(ox + st[0][0] * em, oy + st[0][1] * em, HAND_W * em / 2, 0, 7); ctx.fill(); continue; }
+      ctx.beginPath();
+      st.forEach(([x, y], i) => (i ? ctx.lineTo(ox + x * em, oy + y * em) : ctx.moveTo(ox + x * em, oy + y * em)));
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function updatePad() {
+    const ch = HAND_CHARS[pad.idx];
+    const done = HAND_CHARS.filter((c) => pad.draft[c] && pad.draft[c].length).length;
+    els.handChar.textContent = ch;
+    els.handProgress.textContent = `Zeichen ${pad.idx + 1} von ${HAND_CHARS.length} · ${done} gezeichnet`;
+    els.handPrev.disabled = pad.idx === 0;
+    els.handNext.textContent = pad.idx === HAND_CHARS.length - 1 ? "Fertig" : (pad.draft[ch] && pad.draft[ch].length ? "Weiter ›" : "Überspringen ›");
+    els.handStrip.querySelectorAll("button").forEach((b, i) => {
+      b.classList.toggle("done", !!(pad.draft[HAND_CHARS[i]] && pad.draft[HAND_CHARS[i]].length));
+      b.classList.toggle("current", i === pad.idx);
+    });
+    const cur = els.handStrip.children[pad.idx];
+    if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: "nearest" });
+    drawPad();
+  }
+
+  function padPoint(e) {
+    const c = els.handPad, r = c.getBoundingClientRect(), em = padEm(), [ox, oy] = padOrigin();
+    const x = (e.clientX - r.left) * (c.width / r.width), y = (e.clientY - r.top) * (c.height / r.height);
+    return [(x - ox) / em, (y - oy) / em];
+  }
+
+  // Für die Profil-Speicherung: Zeichen links ausrichten, Breite bestimmen, Punkte ausdünnen
+  function packHand() {
+    const glyphs = {};
+    for (const ch of HAND_CHARS) {
+      const strokes = (pad.draft[ch] || []).filter((s) => s.length);
+      if (!strokes.length) continue;
+      let minX = Infinity, maxX = -Infinity;
+      for (const s of strokes) for (const [x] of s) { minX = Math.min(minX, x); maxX = Math.max(maxX, x); }
+      const bearing = 0.05;
+      const shift = bearing - minX;
+      glyphs[ch] = {
+        a: Math.round((maxX - minX + 2 * bearing + HAND_W) * 1000),
+        s: strokes.map((s) => {
+          const pts = s.length > 2 ? rdp(s.map(([x, y]) => [(x + shift) * 1000, y * 1000]), 3) : s.map(([x, y]) => [(x + shift) * 1000, y * 1000]);
+          return pts.flatMap(([x, y]) => [Math.round(x), Math.round(y)]);
+        }),
+      };
+    }
+    return { v: 1, glyphs };
+  }
+
+  async function saveHandFromPad() {
+    const packed = packHand();
+    if (!Object.keys(packed.glyphs).length) { els.handSaveInfo.textContent = "Zeichne mindestens ein Zeichen."; return; }
+    els.handSave.disabled = true;
+    els.handSaveInfo.textContent = "Wird gespeichert …";
+    try {
+      await saveHand(packed);
+      els.handDialog.close();
+      updateAccountUi();
+      selectFont(HAND_ID);
+      toast("Deine Handschrift ist im Profil gespeichert.");
+    } catch (e) {
+      els.handSaveInfo.textContent = "Speichern fehlgeschlagen: " + authMessage(e);
+    } finally {
+      els.handSave.disabled = false;
+    }
+  }
+
+  function wireHandPad() {
+    HAND_CHARS.forEach((ch, i) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = ch;
+      b.addEventListener("click", () => { pad.idx = i; updatePad(); });
+      els.handStrip.append(b);
+    });
+    const c = els.handPad;
+    c.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      c.setPointerCapture(e.pointerId);
+      const ch = HAND_CHARS[pad.idx];
+      pad.drawing = [padPoint(e)];
+      (pad.draft[ch] = pad.draft[ch] || []).push(pad.drawing);
+      drawPad();
+    });
+    c.addEventListener("pointermove", (e) => {
+      if (!pad.drawing) return;
+      const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      for (const ev of evs.length ? evs : [e]) {
+        const p = padPoint(ev), last = pad.drawing[pad.drawing.length - 1];
+        if (Math.hypot(p[0] - last[0], p[1] - last[1]) > 0.004) pad.drawing.push(p);
+      }
+      drawPad();
+    });
+    const end = () => { if (pad.drawing) { pad.drawing = null; updatePad(); } };
+    c.addEventListener("pointerup", end);
+    c.addEventListener("pointercancel", end);
+    els.handPrev.addEventListener("click", () => { if (pad.idx > 0) { pad.idx--; updatePad(); } });
+    els.handNext.addEventListener("click", () => {
+      if (pad.idx < HAND_CHARS.length - 1) { pad.idx++; updatePad(); } else saveHandFromPad();
+    });
+    els.handUndo.addEventListener("click", () => { const s = pad.draft[HAND_CHARS[pad.idx]]; if (s) s.pop(); updatePad(); });
+    els.handClear.addEventListener("click", () => { delete pad.draft[HAND_CHARS[pad.idx]]; updatePad(); });
+    els.handSave.addEventListener("click", saveHandFromPad);
+    window.addEventListener("resize", () => { if (els.handDialog.open) { sizePad(); drawPad(); } });
+  }
+
+  function wireAccount() {
+    document.querySelectorAll("dialog [data-close]").forEach((b) => b.addEventListener("click", () => b.closest("dialog").close()));
+    els.authDialog.addEventListener("close", () => { if (!state.user) pendingHand = false; });
+    els.handDialog.addEventListener("close", () => { if (!isHand() && state.font === HAND_ID) selectFont("Caveat"); });
+    els.authForm.addEventListener("submit", submitAuth);
+    els.authSwitch.addEventListener("click", () => { setAuthMode(!authRegister); els.authError.hidden = true; });
+    els.accountBtn.addEventListener("click", () => (state.user ? openProfile() : openAuth()));
+    els.profileEditHand.addEventListener("click", () => { els.profileDialog.close(); openHandFlow(); });
+    els.logout.addEventListener("click", logout);
+    els.verifyCheck.addEventListener("click", checkVerified);
+    els.verifyResend.addEventListener("click", () => sendVerification(false));
+    els.verifyDialog.addEventListener("close", () => { if (!isVerified()) pendingHand = false; });
+    wireHandPad();
+  }
+
+  async function restoreSession() {
+    if (!aw) return;
+    try { state.user = await aw.account.get(); } catch (_) { state.user = null; }
+    if (state.user) await loadHand();
+    await handleVerifyLink();
+  }
+
   /* ---------- UI-Verdrahtung ---------- */
 
   function applyMode() {
@@ -1061,6 +1547,7 @@
 
   document.querySelectorAll("[data-group]").forEach((group) => {
     group.addEventListener("click", (e) => {
+      if (e.target.closest('[data-action="edit-hand"]')) { e.preventDefault(); openHandFlow(); return; }
       if (e.target.closest('[data-action="remove-font"]')) {
         e.preventDefault();
         const b = e.target.closest("[data-value]");
@@ -1069,6 +1556,8 @@
       }
       const btn = e.target.closest("[data-value]");
       if (!btn) return;
+      // Eigene Handschrift: erst anmelden bzw. zeichnen, dann auswählen
+      if (btn.dataset.value === HAND_ID && !(state.user && state.hand)) { openHandFlow(); return; }
       group.querySelectorAll("[data-value]").forEach((b) => b.classList.toggle("active", b === btn));
       state[group.dataset.group] = btn.dataset.value;
       if (group.dataset.group === "mode") applyMode();
@@ -1119,9 +1608,13 @@
 
   applyMode();
 
-  // Gespeicherte eigene Schriften und Vorlage wiederherstellen
+  wireAccount();
+  updateAccountUi();
+
+  // Gespeicherte eigene Schriften, Anmeldung und Vorlage wiederherstellen
   (async () => {
-    await restoreCustomFonts();
+    await Promise.all([restoreCustomFonts(), restoreSession()]);
+    updateAccountUi();
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
