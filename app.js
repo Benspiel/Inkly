@@ -55,6 +55,7 @@
     pages: [],    // Vorschau-Canvas je Seite
     inkPages: [], // Striche je Seite (Pixelkoordinaten der Vorschau)
     user: null,   // angemeldetes Appwrite-Konto
+    handVary: 0,  // Verformung der eigenen Handschrift je Zeichen (0 = aus)
     hand: null,   // eigene Handschrift { glyphs: { ch: { adv, strokes: [[x, y], …][] } } } in Geviert-Einheiten
   };
 
@@ -137,6 +138,11 @@
     verifyCheck: $("verifyCheck"),
     verifyResend: $("verifyResend"),
     profileVerified: $("profileVerified"),
+    handVaryBox: $("handVaryBox"),
+    handVary: $("handVary"),
+    handVaryControls: $("handVaryControls"),
+    handVaryInput: $("handVaryInput"),
+    handVaryVal: $("handVaryVal"),
     verifiedDialog: $("verifiedDialog"),
     verifiedClose: $("verifiedClose"),
     verifiedStay: $("verifiedStay"),
@@ -729,7 +735,9 @@
         const rot = (rnd() - 0.5) * 0.09 * j;
         const sc = (1 + (rnd() - 0.5) * 0.06 * j) * l.size;
         const cos = Math.cos(rot) * sc, sin = Math.sin(rot) * sc;
-        for (const st of glyphSkeleton(l.bold, ch).strokes) {
+        let glyph = glyphSkeleton(l.bold, ch).strokes;
+        if (isHand() && state.handVary > 0) glyph = varyGlyph(glyph, rnd);
+        for (const st of glyph) {
           out.push({
             pts: st.pts.map(([gx, gy]) => [pen + gx * cos - gy * sin, y + dy + gx * sin + gy * cos]),
             width: st.w * sc * state.weight * toGn,
@@ -746,6 +754,27 @@
         width: Math.max(2, l.size * 0.05) * state.weight * toGn,
       });
     }
+  }
+
+  /* Eigene Handschrift: Jedes Vorkommen eines Zeichens wird leicht verformt, damit nicht jedes
+     „a“ gleich aussieht – sanfte Wellen über das Zeichen, kleine Verschiebung je Strich und eine
+     etwas andere Breite. Werte in Geviert-Einheiten. */
+  function varyGlyph(strokes, rnd) {
+    const v = state.handVary;
+    const a = 0.018 * v;
+    const fx = 4 + rnd() * 6, fy = 4 + rnd() * 6, px = rnd() * 6.283, py = rnd() * 6.283;
+    const sx = 1 + (rnd() - 0.5) * 0.1 * v, sy = 1 + (rnd() - 0.5) * 0.06 * v;
+    const slant = (rnd() - 0.5) * 0.08 * v;
+    return strokes.map((st) => {
+      const ox = (rnd() - 0.5) * a, oy = (rnd() - 0.5) * a;
+      return {
+        ...st,
+        pts: st.pts.map(([x, y]) => [
+          x * sx - y * slant + ox + a * Math.sin(fy * y + px),
+          y * sy + oy + a * Math.sin(fx * x + py),
+        ]),
+      };
+    });
   }
 
   function drawInkStrokes(ctx, strokes, g) {
@@ -1029,9 +1058,22 @@
 
   /* ---------- Schriftauswahl ---------- */
 
+  const VARY_KEY = "inkly.handVary.v1";
+  function updateHandVaryUi() {
+    els.handVaryBox.hidden = !isHand();
+    els.handVaryControls.hidden = !els.handVary.checked;
+  }
+  function applyHandVary() {
+    state.handVary = els.handVary.checked ? parseFloat(els.handVaryInput.value) : 0;
+    els.handVaryVal.textContent = parseFloat(els.handVaryInput.value) < 0.7 ? "leicht" : parseFloat(els.handVaryInput.value) <= 1.4 ? "mittel" : "stark";
+    updateHandVaryUi();
+    try { localStorage.setItem(VARY_KEY, JSON.stringify({ on: els.handVary.checked, v: els.handVaryInput.value })); } catch (_) {}
+  }
+
   function selectFont(value) {
     els.fontGrid.querySelectorAll("[data-value]").forEach((b) => b.classList.toggle("active", b.dataset.value === value));
     state.font = value;
+    updateHandVaryUi();
     scheduleRender(0);
   }
 
@@ -1110,6 +1152,7 @@
     els.handLock.textContent = !u ? "Anmelden" : !isVerified() ? "Bestätigen" : "Neu";
     els.handEdit.hidden = !(u && state.hand);
     if (!isHand() && state.font === HAND_ID) selectFont("Caveat");
+    updateHandVaryUi();
   }
 
   let authRegister = false;
@@ -1518,6 +1561,7 @@
       group.querySelectorAll("[data-value]").forEach((b) => b.classList.toggle("active", b === btn));
       state[group.dataset.group] = btn.dataset.value;
       if (group.dataset.group === "mode") applyMode();
+      if (group.dataset.group === "font") updateHandVaryUi();
       updateStatus();
       scheduleRender(0);
     });
@@ -1551,6 +1595,14 @@
     updateTemplateUi();
     scheduleRender(0);
   });
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(VARY_KEY) || "null");
+    if (saved) { els.handVary.checked = !!saved.on; els.handVaryInput.value = saved.v; }
+  } catch (_) {}
+  applyHandVary();
+  els.handVary.addEventListener("change", () => { applyHandVary(); scheduleRender(0); });
+  els.handVaryInput.addEventListener("input", () => { applyHandVary(); scheduleRender(60); });
 
   els.exportGn.addEventListener("click", exportGoodnotes);
   els.exportPdf.addEventListener("click", exportPdf);
