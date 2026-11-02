@@ -211,6 +211,59 @@ input[type=range] { width: 100%; accent-color: var(--store-blue); }
 .footer-cols a:hover { color: #fff; }
 .footer-legal { padding-top: 16px; }
 
+/* Konto, Dialoge, Handschrift */
+.nav-account {
+  background: none; border: 1px solid var(--card-border); border-radius: 9999px; height: 32px; padding: 0 14px;
+  font-size: 14px; color: var(--nav-ink); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nav-account:hover { border-color: var(--store-blue); color: var(--store-blue); }
+.hand-tile .font-sample { color: var(--store-blue); }
+.hand-lock {
+  position: absolute; top: 0; right: 0; background: var(--fog); color: var(--ink-secondary);
+  font-size: 10px; padding: 1px 6px; border-bottom-left-radius: 6px;
+}
+.modal {
+  border: 0; border-radius: 16px; padding: 0; width: min(440px, calc(100% - 32px)); max-height: calc(100% - 32px);
+  box-shadow: 0 16px 48px rgba(0,0,0,.2); color: var(--ink); background: var(--canvas);
+}
+.modal::backdrop { background: rgba(0,0,0,.4); }
+.modal.hand-modal { width: min(560px, calc(100% - 16px)); }
+.modal-body { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.modal-head { display: flex; justify-content: space-between; align-items: center; }
+.modal-head h3 { margin: 0; font-size: 20px; font-weight: 600; }
+.modal-close { background: none; border: 0; font-size: 24px; line-height: 1; color: var(--ink-secondary); padding: 4px 8px; }
+.modal .ui-text { margin: 0; font-size: 14px; }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--graphite); }
+.field input {
+  font: 16px "Open Sans", sans-serif; border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--ink);
+}
+.field input:focus { outline: 2px solid var(--store-blue); outline-offset: -1px; border-color: transparent; }
+.form-error { margin: 0; color: var(--error); font-size: 14px; }
+.wide { width: 100%; }
+.center-text { text-align: center; }
+.profile-name { margin: 0; font-size: 18px; font-weight: 600; }
+.hand-current { display: flex; align-items: baseline; justify-content: space-between; }
+.hand-char { font: 600 32px/1 "Open Sans", sans-serif; color: var(--store-blue); min-width: 40px; }
+.hand-pad {
+  width: 100%; aspect-ratio: 1.6; border: 1px solid var(--card-border); border-radius: 12px;
+  touch-action: none; background: #fff; cursor: crosshair; display: block;
+}
+.hand-controls { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.hand-controls .button-store-cart { height: 40px; padding: 8px 18px; font-size: 14px; }
+.hand-strip { display: flex; flex-wrap: wrap; gap: 4px; max-height: 120px; overflow-y: auto; }
+.hand-strip button {
+  width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--canvas);
+  font-size: 14px; color: var(--ink-tertiary); padding: 0;
+}
+.hand-strip button.done { background: var(--store-blue-tint); color: var(--store-blue); border-color: var(--store-blue-tint); }
+.hand-strip button.current { border: 2px solid var(--store-blue); color: var(--ink); }
+.modal-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+@media (max-width: 768px) {
+  .modal-body { padding: 16px; }
+  .modal-foot .button-store-buy { width: 100%; }
+  .nav-account { max-width: 120px; }
+}
+
 /* Toast */
 .toast {
   position: fixed; left: 50%; bottom: 104px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;

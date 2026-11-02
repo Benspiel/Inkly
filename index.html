@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600&family=Caveat:wght@400;600&family=Kalam:wght@400;700&family=Patrick+Hand&family=Indie+Flower&family=Shadows+Into+Light&family=Gochi+Hand&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
   <div class="announcement-bar" id="announce">
@@ -25,6 +25,7 @@
         <a href="#so-gehts">So geht's</a>
         <a href="#faq">FAQ</a>
       </nav>
+      <button class="nav-account" id="accountBtn" type="button">Anmelden</button>
       <a class="button-store-pill" href="#editor">Loslegen</a>
     </div>
   </header>
@@ -85,6 +86,12 @@ Tipp: Zeilen mit # werden zu Überschriften, Zeilen mit - zu Aufzählungen.</tex
         <button class="option-card selectable" data-value="Indie Flower"><span class="font-sample" style="font-family:'Indie Flower'">Indie</span></button>
         <button class="option-card selectable" data-value="Shadows Into Light"><span class="font-sample" style="font-family:'Shadows Into Light'">Shadows</span></button>
         <button class="option-card selectable" data-value="Gochi Hand"><span class="font-sample" style="font-family:'Gochi Hand'">Gochi</span></button>
+        <button class="option-card selectable hand-tile" id="handTile" data-value="__hand__" title="Deine eigene Handschrift">
+          <span class="font-sample">✍︎</span>
+          <span class="font-add-label" id="handTileLabel">Meine Handschrift</span>
+          <span class="hand-lock" id="handLock">Anmelden</span>
+          <span class="font-remove hand-edit" id="handEdit" data-action="edit-hand" role="button" aria-label="Handschrift bearbeiten" hidden>✎</span>
+        </button>
         <label class="option-card selectable dropzone font-add" id="fontAdd" title="Eigene Schrift hinzufügen (.ttf, .otf, .woff, .woff2)">
           <input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" multiple hidden>
           <span class="font-sample">+</span>
@@ -201,6 +208,10 @@ Tipp: Zeilen mit # werden zu Überschriften, Zeilen mit - zu Aufzählungen.</tex
       <p>Ja. Klicke unter „Handschrift“ auf „+ Eigene Schrift“ oder ziehe eine .ttf-, .otf-, .woff- oder .woff2-Datei darauf. Die Schrift wird nur in deinem Browser gespeichert (nicht hochgeladen) und steht beim nächsten Besuch wieder bereit. Über das × entfernst du sie wieder. Tipp: Für „Echte Tinte“ eignen sich schmale, handschriftliche Schriften am besten – sehr fette oder verzierte Schriften ergeben unsaubere Striche.</p>
     </details>
     <details class="faq-row">
+      <summary>Wie nutze ich meine eigene Handschrift?</summary>
+      <p>Melde dich an (oben rechts) und tippe unter „Handschrift“ auf „Meine Handschrift“. Dann schreibst du jedes Zeichen einmal mit Finger, Stift oder Maus. Deine Handschrift wird in deinem Profil gespeichert und steht dir auf jedem Gerät zur Verfügung, auf dem du angemeldet bist. Zeichen, die du nicht gezeichnet hast, werden ausgelassen.</p>
+    </details>
+    <details class="faq-row">
       <summary>Was, wenn Goodnotes die Datei nicht öffnet?</summary>
       <p>Das Ersetzen der PDF-Anlage ist ein experimenteller Workaround, keine offizielle Schnittstelle. Prüfe, ob die Vorlage einseitig und leer war, und nutze sonst den PDF-Export.</p>
     </details>
@@ -221,11 +232,72 @@ Tipp: Zeilen mit # werden zu Überschriften, Zeilen mit - zu Aufzählungen.</tex
     </div>
   </footer>
 
+  <!-- Anmelden / Registrieren -->
+  <dialog class="modal" id="authDialog">
+    <form class="modal-body" id="authForm">
+      <div class="modal-head">
+        <h3 id="authTitle">Anmelden</h3>
+        <button type="button" class="modal-close" data-close aria-label="Schließen">×</button>
+      </div>
+      <p class="ui-text muted" id="authReason">Melde dich an, um deine eigene Handschrift in deinem Profil zu speichern.</p>
+      <label class="field" data-register-only hidden>Name<input id="authName" autocomplete="name"></label>
+      <label class="field">E-Mail<input id="authEmail" type="email" autocomplete="email" required></label>
+      <label class="field">Passwort<input id="authPassword" type="password" autocomplete="current-password" minlength="8" required></label>
+      <p class="form-error" id="authError" hidden></p>
+      <button class="button-store-buy wide" id="authSubmit" type="submit">Anmelden</button>
+      <p class="ui-text muted center-text"><span id="authSwitchText">Noch kein Konto?</span> <button type="button" class="text-link-btn" id="authSwitch">Registrieren</button></p>
+    </form>
+  </dialog>
+
+  <!-- Profil -->
+  <dialog class="modal" id="profileDialog">
+    <div class="modal-body">
+      <div class="modal-head">
+        <h3>Dein Profil</h3>
+        <button type="button" class="modal-close" data-close aria-label="Schließen">×</button>
+      </div>
+      <p class="profile-name" id="profileName"></p>
+      <p class="ui-text muted" id="profileEmail"></p>
+      <p class="ui-text" id="profileHand"></p>
+      <button class="button-store-buy wide" id="profileEditHand" type="button">Handschrift erstellen</button>
+      <button class="button-store-cart wide" id="logoutBtn" type="button">Abmelden</button>
+    </div>
+  </dialog>
+
+  <!-- Handschrift erfassen -->
+  <dialog class="modal hand-modal" id="handDialog">
+    <div class="modal-body">
+      <div class="modal-head">
+        <h3>Meine Handschrift</h3>
+        <button type="button" class="modal-close" data-close aria-label="Schließen">×</button>
+      </div>
+      <p class="ui-text muted">Schreib jedes Zeichen einmal ins Feld, so wie du normal schreibst. Die untere dunkle Linie ist die Grundlinie.</p>
+      <div class="hand-current">
+        <span class="hand-char" id="handChar">a</span>
+        <span class="caption-muted" id="handProgress"></span>
+      </div>
+      <canvas class="hand-pad" id="handPad"></canvas>
+      <div class="hand-controls">
+        <button type="button" class="button-store-cart" id="handPrev">‹ Zurück</button>
+        <button type="button" class="text-link-btn" id="handUndo">Rückgängig</button>
+        <button type="button" class="text-link-btn" id="handClear">Löschen</button>
+        <button type="button" class="button-store-cart" id="handNext">Weiter ›</button>
+      </div>
+      <div class="hand-strip" id="handStrip"></div>
+      <div class="modal-foot">
+        <span class="caption-muted" id="handSaveInfo"></span>
+        <button type="button" class="button-store-buy" id="handSave">Im Profil speichern</button>
+      </div>
+    </div>
+  </dialog>
+
   <div class="toast" id="toast" role="status"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/appwrite@28.3.0/dist/iife/sdk.js"></script>
+  <script src="config.js?v=1"></script>
   <script src="templates.js?v=4"></script>
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>

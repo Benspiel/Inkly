@@ -37,10 +37,11 @@
 | 👀 **Live-Vorschau** | Tippen und sofort sehen, wie die Seite aussieht. Die Vorschau entspricht exakt dem Export. |
 | 🖋️ **6 Handschriften** | Caveat, Kalam, Patrick Hand, Indie Flower, Shadows Into Light und Gochi Hand – mit einstellbarer Größe, Strichstärke und „Unregelmäßigkeit“. Oder **eigene Schrift** (.ttf, .otf, .woff, .woff2) hochladen. |
 | 📓 **Originales Goodnotes-Papier** | Liniert, eng liniert, kariert oder blanko – die Linien kommen 1:1 aus echten Goodnotes-Notizbüchern. |
+| ✍️ **Meine Handschrift** | Mit Konto: jedes Zeichen einmal selbst schreiben – Inkly schreibt deinen Text dann in **deiner eigenen Handschrift**. Gespeichert im Profil, auf jedem Gerät verfügbar. |
 | 🎨 **Tintenfarben** | Blau, Schwarz, Grün oder Rot. |
 | 📝 **Mini-Markdown** | `# Überschrift` wird unterstrichen, `- Punkt` wird zur Aufzählung – perfekt für Lernzettel. |
 | 📄 **PDF-Export** | Alternativ als PDF oder als `.goodnotes` mit dem Text als Seitenhintergrund. |
-| 🔒 **Privat** | Alles läuft lokal im Browser. Kein Server, kein Upload, kein Konto. |
+| 🔒 **Privat** | Alles läuft lokal im Browser. Ein Konto brauchst du nur für „Meine Handschrift“ – dann wird ausschließlich deine gezeichnete Handschrift im Profil gespeichert, nie dein Text. |
 
 ---
 
@@ -57,6 +58,20 @@ python -m http.server 5173
 Dann <http://localhost:5173> öffnen, Text einfügen, Stil wählen und auf **„.goodnotes exportieren“** klicken. Die Datei auf iPad oder Mac öffnen – fertig.
 
 > 💡 Längere Texte werden auf mehrere Seiten verteilt. Im Tinten-Modus entsteht dann pro Seite eine eigene `.goodnotes`-Datei.
+
+### 👤 Konten mit Appwrite (für „Meine Handschrift“)
+
+Anmeldung und Profil laufen über [Appwrite](https://appwrite.io). Ohne Einrichtung ist die Anmeldung einfach deaktiviert, alles andere funktioniert weiter.
+
+1. In der Appwrite-Konsole ein Projekt anlegen und unter **Overview → Platforms** eine **Web-Plattform** mit deiner Domain hinzufügen (für lokal: `localhost`).
+2. Unter **Auth → Settings** die Anmeldung per **E-Mail/Passwort** aktivieren.
+3. Unter **Databases** eine Datenbank mit der ID `inkly` anlegen, darin eine Tabelle mit der ID `handwriting`:
+   - Spalte `glyphs`: **String**, Größe `1000000`, nicht erforderlich
+   - **Row security** einschalten
+   - Tabellen-Berechtigung: Rolle **Users** → nur **Create**
+4. In `config.js` die `endpoint`- und `projectId`-Werte aus der Konsole eintragen.
+
+Jede Handschrift liegt in einer eigenen Zeile mit der Benutzer-ID als Schlüssel. Nur der Benutzer selbst darf sie lesen, ändern und löschen.
 
 ---
 
@@ -99,7 +114,8 @@ Die Python-Werkzeuge zum Untersuchen und Erzeugen von Strichen liegen in [`tools
 ```
 ├── index.html        # Oberfläche
 ├── styles.css        # Design (angelehnt an ein „Produkt-Showroom“-Designsystem)
-├── app.js            # Layout, Rendering, Skelettierung, Goodnotes-/PDF-Export
+├── app.js            # Layout, Rendering, Skelettierung, Goodnotes-/PDF-Export, Konto, Handschrift
+├── config.js         # Appwrite-Verbindung (Projekt-ID eintragen)
 ├── templates.js      # Eingebaute leere Goodnotes-Notizbücher (Base64)
 ├── assets/           # Logo, Favicon, README-Bilder
 └── tools/ink/        # Python: Strichformat dekodieren, prüfen, erzeugen
@@ -120,6 +136,7 @@ Die Python-Werkzeuge zum Untersuchen und Erzeugen von Strichen liegen in [`tools
 - Handschriften von [Google Fonts](https://fonts.google.com/) (SIL Open Font License)
 - [JSZip](https://stuk.github.io/jszip/) zum Lesen und Schreiben der Archive
 - [jsPDF](https://github.com/parallax/jsPDF) für den PDF-Export
+- [Appwrite](https://appwrite.io) für Konten und Profile
 
 ---
 
